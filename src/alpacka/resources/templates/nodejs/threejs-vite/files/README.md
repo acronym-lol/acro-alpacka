@@ -5,6 +5,8 @@ spinning cube, ground plane.
 
 ## Setup
 
+Needs Node.js 20.19+ or 22.12+ (Vite 8's minimum).
+
 ```
 npm install
 ```
