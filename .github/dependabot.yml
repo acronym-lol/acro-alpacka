@@ -5,10 +5,14 @@
 # their manifests (pyproject.toml, package.json) contain {{PLACEHOLDERS}}
 # that only become valid once ALPACKA creates a project from them, so
 # Dependabot can't parse them.
+#
+# Updates target dev, like every other change; dev reaches main through
+# a release PR.
 version: 2
 updates:
   - package-ecosystem: "pip"
     directory: "/"
+    target-branch: "dev"
     schedule:
       interval: "monthly"
     exclude-paths:
@@ -16,5 +20,6 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "dev"
     schedule:
       interval: "monthly"
