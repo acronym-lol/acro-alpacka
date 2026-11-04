@@ -1,5 +1,5 @@
 PySide6>=6.6
 PyYAML>=6.0
-ruamel.yaml>=0.18
+ruamel.yaml>=0.19.1
 psutil>=5.9
 pyinstaller>=6.0
