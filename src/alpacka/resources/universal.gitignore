@@ -1,0 +1,36 @@
+# Baseline .gitignore applied to every new project by the launcher.
+# Rich templates can override this via `files:` with overwrite: true in
+# their template.yml.
+
+# TouchDesigner runtime artifacts
+TDLogs/
+Backup/
+CrashAutoSave*.toe
+
+# TD auto-numbered backups (name.246.toe, name.1.1.0.toe, etc.)
+*.[0-9]*.toe
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+
+# Node / MCP
+node_modules/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env
+.env.local
+
+# Per-machine ALPACKA overrides (secrets, local variable overrides).
+# The launcher never writes to this file; users maintain it by hand.
+alpacka.local.yml

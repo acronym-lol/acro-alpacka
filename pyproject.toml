@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alpacka"
+dynamic = ["version"]
+description = "Acronym Launcher: Projects And Creative Kits Automator."
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = [
+    "PySide6>=6.6",
+    "PyYAML>=6.0",
+    "ruamel.yaml>=0.18",
+    "psutil>=5.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools.dynamic]
+version = {attr = "alpacka.__version__"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[project.scripts]
+alpacka = "alpacka.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+alpacka = ["resources/**/*", "ui/*.qss"]

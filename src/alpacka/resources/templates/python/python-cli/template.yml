@@ -1,0 +1,22 @@
+schema: 1
+kind: python
+name: python-cli
+description: >-
+  Python CLI starter — pyproject.toml, Typer-based commands, entry at main.py.
+  Create a venv + install before launching: `python -m venv .venv &&
+  .venv/Scripts/pip install -e .` (Windows) or the POSIX equivalent.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+  PROJECT_SLUG: "{{project:slug}}"
+
+kind_data:
+  python:
+    entry: main.py
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/pyproject.toml, dst: pyproject.toml, substitute: true, overwrite: true}
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}

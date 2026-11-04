@@ -1,0 +1,68 @@
+schema: 1
+kind: nodejs
+name: sveltekit
+description: >-
+  SvelteKit via `npx sv create` — file-based routing, SSR, Vite dev server.
+  Picks template (minimal / demo / library), types (ts / jsdoc), and add-ons
+  (prettier, eslint, vitest, tailwind, etc). Runs the official Svelte
+  scaffolder so the output always tracks upstream; requires Node + npx on
+  PATH.
+
+# Handled by ALPACKA's scaffold-command runner (see template_scaffold.py).
+# Only honored for bundled templates — user-added templates cannot declare
+# a `scaffold:` block.
+scaffold:
+  requires_command: npx
+  # `--no-install` keeps the scaffold fast; ALPACKA's install_steps
+  # handles `npm install` after the scaffold succeeds. `--no-dir-check`
+  # opts out of sv's "this folder isn't empty, continue?" prompt —
+  # ALPACKA already created the empty project folder, so the prompt
+  # would block the non-interactive runner. The trailing `.`
+  # scaffolds into that folder.
+  command: "npx --yes sv@latest create --template {SVELTE_TEMPLATE} --types {SVELTE_TYPES} --add {SVELTE_ADDONS} --no-install --no-dir-check ."
+  cwd: "."
+  inputs:
+    - name: SVELTE_TEMPLATE
+      type: enum
+      options: [minimal, demo, library]
+      default: minimal
+      prompt: "Starter template"
+      description: "minimal — bare app · demo — sample app with examples · library — component library"
+    - name: SVELTE_TYPES
+      type: enum
+      options: [ts, jsdoc, none]
+      default: ts
+      prompt: "Type checking"
+      description: "ts — TypeScript files · jsdoc — JS with JSDoc annotations · none — plain JS"
+    - name: SVELTE_ADDONS
+      type: multiselect
+      prompt: "Add-ons"
+      description: "Passed to `sv create --add` at scaffold time. Toggle any you want pre-wired."
+      default: [prettier, eslint]
+      options:
+        - {value: prettier, label: "Prettier (code formatter)"}
+        - {value: eslint, label: "ESLint (linter)"}
+        - {value: vitest, label: "Vitest (unit tests)"}
+        - {value: playwright, label: "Playwright (end-to-end tests)"}
+        - {value: tailwindcss, label: "Tailwind CSS"}
+        - {value: storybook, label: "Storybook"}
+        - {value: mdsvex, label: "mdsvex (Markdown in Svelte)"}
+        - {value: paraglide, label: "Paraglide (i18n)"}
+        - {value: drizzle, label: "Drizzle (ORM)"}
+        - {value: better-auth, label: "Better Auth"}
+        - {value: sveltekit-adapter, label: "SvelteKit Adapter"}
+
+
+# Runtime variables persisted into the new project's alpacka.yml. The
+# nodejs kind handler's `display_url` reads PORT + HOST to compose the
+# `http://localhost:{PORT}` globe-button link on the project card.
+variables:
+  - name: PORT
+    type: int
+    default: 5173
+    prompt: "Vite dev server port"
+    description: "Passed to `vite dev` as $PORT; defaults match SvelteKit's convention."
+  - name: HOST
+    type: string
+    default: localhost
+    prompt: "Vite dev server host"

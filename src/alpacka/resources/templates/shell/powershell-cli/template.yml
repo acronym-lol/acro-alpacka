@@ -1,0 +1,18 @@
+schema: 1
+kind: shell
+name: powershell-cli
+description: >-
+  Windows-native PowerShell starter — `run.ps1` with a proper param block,
+  comment-based help, a Pester test stub. `run.bat` shim so ALPACKA's shell
+  kind picks it up via the standard run.bat / run.sh resolution.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/run.ps1, dst: run.ps1, substitute: true, overwrite: true}
+  - {src: files/run.bat, dst: run.bat, substitute: true, overwrite: true}
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}

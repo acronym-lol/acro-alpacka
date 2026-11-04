@@ -1,0 +1,35 @@
+schema: 1
+kind: nodejs
+name: socketio-server
+description: >-
+  Express + Socket.io server for real-time events — cue triggering,
+  multi-screen sync, live-show plumbing. Includes a browser demo at
+  HTTP_PORT that shows a live event log and lets you fire test cues
+  to all connected clients.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+  PROJECT_SLUG: "{{project:slug}}"
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/package.json, dst: package.json, substitute: true, overwrite: true}
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}
+
+variables:
+  - name: PORT
+    type: int
+    default: 4000
+    prompt: "HTTP + WebSocket port"
+    description: "Browser clients connect here; Socket.io upgrades from HTTP to WS automatically."
+  - name: HOST
+    type: string
+    default: 0.0.0.0
+    prompt: "Bind host"
+    description: "Use 0.0.0.0 so tablets on a venue Wi-Fi can reach it; switch to 127.0.0.1 for laptop-only."
+  - name: CORS_ORIGIN
+    type: string
+    default: "*"
+    prompt: "CORS origin (* allows any; lock down for production)"

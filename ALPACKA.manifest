@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <assemblyIdentity type="win32" name="Acronym.ALPACKA" version="1.0.0.0" processorArchitecture="*"/>
+  <!--
+    Declares per-monitor-v2 DPI awareness so the frozen exe matches what
+    python.exe does. Without this, a scaled display (125/150/175%) offsets
+    mouse hit-testing from where widgets paint. Both keys are present for
+    breadth: dpiAware (Win7+/8.1) and dpiAwareness (Win10 1607+, wins where
+    supported). See app.py:_ensure_dpi_awareness for the runtime counterpart.
+  -->
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+    </windowsSettings>
+  </application>
+</assembly>

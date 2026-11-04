@@ -1,0 +1,44 @@
+schema: 1
+kind: nodejs
+name: vite-react
+description: >-
+  React + Vite + TypeScript via `npm create vite`. Click Launch after create
+  to run `npm run dev` (Vite opens on port 5173 by default). Requires npm on
+  PATH at create time.
+
+scaffold:
+  requires_command: npm
+  # `npm create vite@latest <dir>` scaffolds into `<dir>`. We pass `.` so
+  # it lands in the project folder ALPACKA just created. The `-- --` escape
+  # separates npm's args from create-vite's. `--no-install` keeps the
+  # scaffold fast; ALPACKA's optional post-install handles dependencies.
+  command: "npm create vite@latest . -- --template {VITE_TEMPLATE} --no-install"
+  cwd: "."
+  inputs:
+    - name: VITE_TEMPLATE
+      type: enum
+      prompt: "Vite preset"
+      default: react-ts
+      description: "Framework + language flavor passed to create-vite."
+      options:
+        - {value: react-ts, label: "React + TypeScript"}
+        - {value: react, label: "React (JavaScript)"}
+        - {value: vue-ts, label: "Vue + TypeScript"}
+        - {value: vue, label: "Vue (JavaScript)"}
+        - {value: svelte-ts, label: "Svelte + TypeScript"}
+        - {value: svelte, label: "Svelte (JavaScript)"}
+        - {value: solid-ts, label: "Solid + TypeScript"}
+        - {value: preact-ts, label: "Preact + TypeScript"}
+        - {value: lit-ts, label: "Lit + TypeScript"}
+        - {value: vanilla-ts, label: "Vanilla TypeScript"}
+        - {value: vanilla, label: "Vanilla JavaScript"}
+
+variables:
+  - name: PORT
+    type: int
+    default: 5173
+    prompt: "Vite dev server port"
+  - name: HOST
+    type: string
+    default: localhost
+    prompt: "Vite dev server host"

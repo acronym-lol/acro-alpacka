@@ -1,0 +1,27 @@
+schema: 1
+kind: docker-compose
+name: redis
+description: >-
+  Standalone Redis 7 — single-service compose with a named volume +
+  healthcheck. Variables for port and password. Use `postgres-redis` if
+  you need both in one stack.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}
+
+variables:
+  - name: REDIS_PORT
+    type: int
+    default: 6379
+    prompt: "Host port (6379 by default)"
+  - name: REDIS_PASSWORD
+    type: string
+    default: ""
+    prompt: "Password (optional — blank = no auth)"
+    description: "Move to alpacka.local.yml if set."

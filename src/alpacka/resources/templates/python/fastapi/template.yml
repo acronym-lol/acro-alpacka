@@ -1,0 +1,38 @@
+schema: 1
+kind: python
+name: fastapi
+description: >-
+  FastAPI + uvicorn starter — `main:app` ASGI app, auto-reloading dev server,
+  example /hello endpoint. Launch runs uvicorn bound to PORT/HOST.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+  PROJECT_SLUG: "{{project:slug}}"
+
+# The python kind handler runs `python <entry>`. For FastAPI we want to
+# run uvicorn instead, so we declare a concrete run_config command that
+# wins over the default entry-file resolution.
+kind_data:
+  python:
+    entry: main.py
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/pyproject.toml, dst: pyproject.toml, substitute: true, overwrite: true}
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}
+
+variables:
+  - name: PORT
+    type: int
+    default: 8000
+    prompt: "ASGI port"
+  - name: HOST
+    type: string
+    default: 0.0.0.0
+    prompt: "Bind host"
+  - name: RELOAD
+    type: bool
+    default: true
+    prompt: "Auto-reload on source change"

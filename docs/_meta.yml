@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://docs.acronym.lol/schemas/meta.schema.json
+#
+# Repo metadata read by acro-docs, which collects this docs/ folder into the
+# Acronym documentation site and lists the tool in its catalog.
+#
+# Plain YAML with no dependency on any generator. The comment above gives editors live
+# schema validation and is inert in every tool that does not understand it.
+
+schema_version: 1
+repo: acronym-lol/acro-alpacka
+
+name: ALPACKA
+summary: 'Desktop launcher for creative-tool projects and services, with a searchable project library, templated project creation, TD version pinning, and live process tracking.'
+
+owner: '@matthewwachter'
+maintainers: []
+
+# tier 2: supported. If ALPACKA is down you can open the .toe by hand, so there is a
+# workaround, but it is the front door to the project library for everyone using it.
+tier: 2
+status: active
+
+# `public` = listed on the public acronym.lol tools page.
+visibility: public
+
+# `touchdesigner` over a generic category: most specific wins, and TD is the first-class
+# project kind. Worth revisiting if the other toolchains overtake it.
+category: touchdesigner
+
+# No `group`: the existing groups are `project-template` and `modules`, and this is
+# neither — it is a standalone tool, so it sits directly under TouchDesigner.
+
+requires:
+  - Windows or macOS
+  - TouchDesigner (for TouchDesigner projects)
+
+links:
+  homepage: https://acronym-lol.github.io/acro-alpacka/

@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Virtual envs
+.venv/
+venv/
+
+# Build artifacts
+build/
+dist/
+*.spec
+
+# Portable-mode config (created at runtime next to the exe)
+data/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local secrets / env
+.env
+.env.local
+
+# Claude Code local settings
+.claude/
+
+# Local agent instructions (kept out of the public repo)
+CLAUDE.md

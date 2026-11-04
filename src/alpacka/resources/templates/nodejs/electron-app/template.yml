@@ -1,0 +1,28 @@
+schema: 1
+kind: nodejs
+name: electron-app
+description: >-
+  Electron desktop app via Electron Forge — pick a template (vanilla,
+  webpack, vite). After scaffold, `npm start` opens the app window.
+  Requires npx on PATH.
+
+scaffold:
+  requires_command: npx
+  # `--yes` opts out of interactive prompts. The `--template` flag picks
+  # the underlying Forge starter. We pass `.` so the scaffold lands in
+  # the project folder ALPACKA just created.
+  command: "npx --yes create-electron-app@latest . --template={ELECTRON_TEMPLATE}"
+  cwd: "."
+  inputs:
+    - name: ELECTRON_TEMPLATE
+      type: enum
+      prompt: "Forge template"
+      default: vite
+      description: "vanilla = no bundler · webpack = HMR + bundling · vite = fast dev server + bundling (recommended)"
+      options:
+        - {value: vite, label: "Vite (recommended — fastest dev server)"}
+        - {value: vite-typescript, label: "Vite + TypeScript"}
+        - {value: webpack, label: "Webpack"}
+        - {value: webpack-typescript, label: "Webpack + TypeScript"}
+
+variables: []

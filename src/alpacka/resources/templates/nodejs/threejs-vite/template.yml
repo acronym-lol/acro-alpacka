@@ -1,0 +1,30 @@
+schema: 1
+kind: nodejs
+name: threejs-vite
+description: >-
+  Three.js + Vite starter — render loop, perspective camera, OrbitControls,
+  a spinning cube, and resize handling. Vanilla JS to keep the surface
+  small. Run `npm install` after create, then click Launch for the dev
+  server on port 5173.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+  PROJECT_SLUG: "{{project:slug}}"
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/package.json, dst: package.json, substitute: true, overwrite: true}
+  - {src: files/index.html, dst: index.html, substitute: true, overwrite: true}
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}
+
+variables:
+  - name: PORT
+    type: int
+    default: 5173
+    prompt: "Vite dev server port"
+  - name: HOST
+    type: string
+    default: localhost
+    prompt: "Vite dev server host"

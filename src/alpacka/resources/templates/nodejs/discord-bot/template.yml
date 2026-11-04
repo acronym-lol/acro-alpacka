@@ -1,0 +1,35 @@
+schema: 1
+kind: nodejs
+name: discord-bot
+description: >-
+  discord.js bot with slash commands — token from .env, /ping and /hello
+  commands, separate `register` script to publish commands to Discord. Set
+  DISCORD_TOKEN, DISCORD_CLIENT_ID, and (optionally) DISCORD_GUILD_ID for
+  guild-scoped commands during dev.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+  PROJECT_SLUG: "{{project:slug}}"
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/package.json, dst: package.json, substitute: true, overwrite: true}
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}
+
+variables:
+  - name: DISCORD_TOKEN
+    type: string
+    default: ""
+    prompt: "Bot token"
+    description: "Move to alpacka.local.yml so it doesn't get committed."
+  - name: DISCORD_CLIENT_ID
+    type: string
+    default: ""
+    prompt: "Application (client) ID"
+  - name: DISCORD_GUILD_ID
+    type: string
+    default: ""
+    prompt: "Guild ID for dev (optional — leave blank to register globally)"
+    description: "Guild commands publish instantly; global commands take ~1h to propagate. Use a guild ID during dev."

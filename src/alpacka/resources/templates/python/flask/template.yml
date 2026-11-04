@@ -1,0 +1,36 @@
+schema: 1
+kind: python
+name: flask
+description: >-
+  Flask starter — single `app.py`, example /hello + /webhook endpoints,
+  PORT/HOST/DEBUG variables, pyproject.toml with pinned deps. Lighter than
+  FastAPI for simple HTTP receivers and webhooks.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+  PROJECT_SLUG: "{{project:slug}}"
+
+kind_data:
+  python:
+    entry: app.py
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/pyproject.toml, dst: pyproject.toml, substitute: true, overwrite: true}
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}
+
+variables:
+  - name: PORT
+    type: int
+    default: 5000
+    prompt: "HTTP port"
+  - name: HOST
+    type: string
+    default: 127.0.0.1
+    prompt: "Bind host"
+  - name: FLASK_DEBUG
+    type: bool
+    default: true
+    prompt: "Debug mode (auto-reload + verbose errors)"

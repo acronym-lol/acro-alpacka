@@ -1,0 +1,69 @@
+schema: 1
+kind: nodejs
+name: nextjs
+description: >-
+  Next.js via `npx create-next-app`. Defaults to TypeScript + App Router +
+  Tailwind + ESLint; toggle each at create time. Click Launch to run
+  `npm run dev` (Next opens on port 3000 by default). Requires npx on PATH.
+
+scaffold:
+  requires_command: npx
+  # `--yes` opts out of any leftover interactive prompts. The `.` lands
+  # the scaffold in the project folder ALPACKA just made. `--use-npm`
+  # forces npm even if pnpm/yarn lockfiles exist elsewhere on the machine.
+  command: "npx --yes create-next-app@latest . --yes {NEXT_TYPESCRIPT} {NEXT_TAILWIND} {NEXT_ESLINT} {NEXT_APP_ROUTER} {NEXT_SRC_DIR} {NEXT_IMPORT_ALIAS} --use-npm --no-install"
+  cwd: "."
+  inputs:
+    - name: NEXT_TYPESCRIPT
+      type: enum
+      prompt: "Use TypeScript?"
+      default: "--typescript"
+      options:
+        - {value: "--typescript", label: "Yes (TypeScript)"}
+        - {value: "--javascript", label: "No (JavaScript)"}
+    - name: NEXT_TAILWIND
+      type: enum
+      prompt: "Tailwind CSS?"
+      default: "--tailwind"
+      options:
+        - {value: "--tailwind", label: "Yes"}
+        - {value: "--no-tailwind", label: "No"}
+    - name: NEXT_ESLINT
+      type: enum
+      prompt: "ESLint?"
+      default: "--eslint"
+      options:
+        - {value: "--eslint", label: "Yes"}
+        - {value: "--no-eslint", label: "No"}
+    - name: NEXT_APP_ROUTER
+      type: enum
+      prompt: "Router"
+      default: "--app"
+      description: "App Router is the modern default; Pages Router is the legacy Next ≤12 layout."
+      options:
+        - {value: "--app", label: "App Router"}
+        - {value: "--no-app", label: "Pages Router"}
+    - name: NEXT_SRC_DIR
+      type: enum
+      prompt: "Use `src/` directory?"
+      default: "--no-src-dir"
+      options:
+        - {value: "--no-src-dir", label: "No (files at project root)"}
+        - {value: "--src-dir", label: "Yes (src/app, src/pages, ...)"}
+    - name: NEXT_IMPORT_ALIAS
+      type: enum
+      prompt: "Import alias"
+      default: "--import-alias=@/*"
+      options:
+        - {value: "--import-alias=@/*", label: "@/* (default)"}
+        - {value: "--no-import-alias", label: "None"}
+
+variables:
+  - name: PORT
+    type: int
+    default: 3000
+    prompt: "Next.js dev server port"
+  - name: HOST
+    type: string
+    default: localhost
+    prompt: "Bind host"

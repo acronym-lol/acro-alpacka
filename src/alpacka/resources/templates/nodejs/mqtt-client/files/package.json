@@ -1,0 +1,13 @@
+{
+  "name": "{{PROJECT_SLUG}}",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node main.js",
+    "dev": "node --watch main.js"
+  },
+  "dependencies": {
+    "mqtt": "^5.10.0"
+  }
+}

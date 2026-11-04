@@ -1,0 +1,35 @@
+schema: 1
+kind: docker-compose
+name: postgres
+description: >-
+  Standalone Postgres 16 — single-service compose with a named volume and
+  healthcheck. Variables for user/password/db/port. Use `postgres-redis`
+  if you also need Redis.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}
+
+variables:
+  - name: POSTGRES_USER
+    type: string
+    default: postgres
+    prompt: "Postgres user"
+  - name: POSTGRES_PASSWORD
+    type: string
+    default: postgres
+    prompt: "Postgres password"
+    description: "Move to alpacka.local.yml if you'd rather not commit it."
+  - name: POSTGRES_DB
+    type: string
+    default: app
+    prompt: "Postgres database name"
+  - name: POSTGRES_PORT
+    type: int
+    default: 5432
+    prompt: "Host port (5432 by default)"

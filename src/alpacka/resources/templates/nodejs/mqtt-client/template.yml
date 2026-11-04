@@ -1,0 +1,49 @@
+schema: 1
+kind: nodejs
+name: mqtt-client
+description: >-
+  mqtt.js sub + pub demo — connects to a broker, subscribes to a topic
+  pattern, publishes a heartbeat. Mirror of python/mqtt-client. Pairs
+  with docker-compose/mqtt-broker for a one-click local stack.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+  PROJECT_SLUG: "{{project:slug}}"
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/package.json, dst: package.json, substitute: true, overwrite: true}
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}
+
+variables:
+  - name: MQTT_HOST
+    type: string
+    default: localhost
+    prompt: "Broker host"
+  - name: MQTT_PORT
+    type: int
+    default: 1883
+    prompt: "Broker port"
+  - name: MQTT_TOPIC
+    type: string
+    default: "{{PROJECT_NAME}}/#"
+    prompt: "Subscribe topic (supports MQTT wildcards: + and #)"
+  - name: MQTT_PUBLISH_TOPIC
+    type: string
+    default: "{{PROJECT_NAME}}/heartbeat"
+    prompt: "Publish topic (heartbeat sender uses this)"
+  - name: MQTT_USERNAME
+    type: string
+    default: ""
+    prompt: "Username (blank = anonymous)"
+  - name: MQTT_PASSWORD
+    type: string
+    default: ""
+    prompt: "Password (blank = anonymous)"
+    description: "Move to alpacka.local.yml so it doesn't get committed."
+  - name: HEARTBEAT_SECONDS
+    type: int
+    default: 5
+    prompt: "Heartbeat interval (seconds, 0 to disable)"

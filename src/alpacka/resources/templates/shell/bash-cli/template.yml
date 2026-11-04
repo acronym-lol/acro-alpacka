@@ -1,0 +1,18 @@
+schema: 1
+kind: shell
+name: bash-cli
+description: >-
+  Bash CLI starter — `run.sh` with `getopts` arg parsing, a Makefile of common
+  targets, and a README documenting the PowerShell equivalent for Windows users.
+  Launch runs `./run.sh` (or `run.bat` on Windows).
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/run.sh, dst: run.sh, substitute: true, overwrite: true}
+  - {src: files/run.bat, dst: run.bat, substitute: true, overwrite: true}
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}

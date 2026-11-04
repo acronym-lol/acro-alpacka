@@ -1,0 +1,1274 @@
+/*
+ * Acronym Dark theme for ALPACKA — Acronym Launcher: Projects And Creative Kits Automator.
+ * Palette references modules/td-theme-manager/acronym-colors.md and
+ * mirrors acronym-dark.css (warm core darks + marigold accent).
+ *
+ * Palette tokens (kept as comments so future edits have context):
+ *   --palette-bg             #1F2222   A_DARK_1           main background
+ *   --palette-bg-dark        #0C0C0C   A_BLACK            sidebar / topbar
+ *   --palette-bg-surface     #2B302F   A_DARK_2           cards, inputs
+ *   --palette-bg-raised      #3E3A36   raised surfaces    button fills, hover
+ *   --palette-bg-highlight   #4C4844   MUD PUDDLE dark    pressed / selected
+ *   --palette-fg             #BEB7AF   HAZY               primary text
+ *   --palette-fg-bright      #ECECEC   A_WHITE            emphasis
+ *   --palette-fg-muted       #9D948B   MUD PUDDLE         secondary text
+ *   --palette-fg-dim         #555959                      disabled / dim
+ *   --palette-accent         #FDCF00   MARIGOLD           primary accent
+ *   --palette-accent-alt     #7D93AF   STEEL BLUE         secondary accent
+ *   --palette-border         #6E6860                      dividers
+ *   --palette-error          #CC2200                      errors
+ *   --palette-warning        #DB5400   BLAZE              warnings
+ *   --palette-success        #07A400   MATRIX GREEN       success
+ */
+
+/* ================================================================ *
+ *  Depth hierarchy (darkest → lightest):                            *
+ *    A_BLACK  #0C0C0C  — sidebar (deepest navigation recess)        *
+ *    gray-05  #141312  — library content well (recessed)            *
+ *    A_DARK_1 #1F2222  — title bar chrome, content surface          *
+ *    A_DARK_2 #2B302F  — action bar header, card surfaces           *
+ *    gray-30  #3E3A36  — raised interactive elements                *
+ * ================================================================ */
+
+QWidget {
+    color: #BEB7AF;
+    font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+    font-size: 13px;
+}
+
+QMainWindow, #rootContainer {
+    background-color: #1F2222;
+}
+
+/* Content surface fills the area behind the action bar + stacked
+ * views. The library view's inner scroll has a darker recessed bg. */
+#content {
+    background-color: #1F2222;
+}
+
+/* Visible corner grip so the frameless window's resize affordance is
+ * discoverable. Sits against A_DARK-ish content, so stroke it in MUD
+ * PUDDLE so it reads as a handle without competing with the accent. */
+#mainSizeGrip {
+    background: transparent;
+    width: 14px;
+    height: 14px;
+}
+
+QLabel {
+    background-color: transparent;
+    color: #BEB7AF;
+}
+
+/* ------------------------------ Sidebar ------------------------------ */
+
+#sidebar {
+    background-color: #0C0C0C;
+}
+
+/* Body splitter — the handle serves as the sidebar/content divider.
+ * Thin dark seam at rest, MARIGOLD on hover so the grab affordance
+ * appears the moment the cursor crosses over it. */
+QSplitter#bodySplitter::handle {
+    background-color: #2B302F;
+}
+
+QSplitter#bodySplitter::handle:horizontal {
+    width: 2px;
+}
+
+QSplitter#bodySplitter::handle:hover {
+    background-color: #FDCF00;
+}
+
+#sidebarNav {
+    background-color: transparent;
+    border: none;
+    outline: 0;
+    show-decoration-selected: 1;
+}
+
+#sidebarNav::item {
+    padding: 6px 8px;
+    color: #BEB7AF;
+    border-left: 2px solid transparent;
+    min-height: 24px;
+}
+
+#sidebarNav::item:selected {
+    background-color: #1F2222;      /* A_DARK_1 — lifts from A_BLACK sidebar */
+    color: #FDCF00;                 /* MARIGOLD — keeps accent identity */
+    border-left: 2px solid #6E6860; /* subdued gray — a soft pointer, not a vivid bar */
+    font-weight: 600;
+}
+
+#sidebarNav::item:hover:!selected {
+    background-color: #141312;      /* gray-05 — subtle lift on A_BLACK */
+    color: #ECECEC;
+}
+
+/* Tree branch gutter — Lucide chevrons baked to MUD PUDDLE so they
+ * read as subtle secondary UI, not fighting the MARIGOLD accents. */
+#sidebarNav::branch {
+    background: transparent;
+}
+
+/* Selected-row branch gutter fills with the same dark we use for the
+ * item body. Without this rule, Qt fills the branch area with the
+ * palette's Highlight color when the row is selected — showing up as
+ * a bright block next to the chevron (especially pronounced when the
+ * tree loses focus and falls back to the Inactive palette group). */
+#sidebarNav::branch:selected {
+    background-color: #1F2222;
+}
+
+#sidebarNav::branch:has-children:!has-siblings:closed,
+#sidebarNav::branch:closed:has-children:has-siblings {
+    image: url({ICONS}/chevron-right.svg);
+}
+
+#sidebarNav::branch:open:has-children:!has-siblings,
+#sidebarNav::branch:open:has-children:has-siblings {
+    image: url({ICONS}/chevron-down.svg);
+}
+
+#versionLabel {
+    color: #555959;
+    font-size: 11px;
+}
+
+/* --------------------------- Custom title bar ----------------------- *
+ * Main window chrome — uses gray-30 (#3E3A36) which sits a full step
+ * above A_DARK_2 (#2B302F) on the warm-gray ramp. This makes the
+ * title bar visually "float" over the action bar and content. Border
+ * bottom uses A_DARK_2 as a recessed seam between chrome and header. */
+
+#titleBar {
+    background-color: #3E3A36;      /* gray-30 — clearly lighter than action bar */
+    border-bottom: 1px solid #2B302F;
+}
+
+#titleBarLogo {
+    background: transparent;
+    padding: 0;
+}
+
+#titleBarTitle {
+    color: #ECECEC;
+    font-size: 13px;
+    font-weight: 600;
+    padding-left: 8px;
+    letter-spacing: 0.3px;
+}
+
+#titleBarButton {
+    background-color: transparent;
+    border: none;
+    color: #9D948B;
+    font-size: 15px;
+}
+
+#titleBarButton:hover {
+    background-color: #484440;      /* gray-35 — subtle lift on hover */
+    color: #ECECEC;
+}
+
+#titleBarButton:pressed {
+    background-color: #5A5650;      /* gray-40 — distinct press */
+}
+
+#titleBarCloseButton {
+    background-color: transparent;
+    border: none;
+    color: #9D948B;
+    font-size: 15px;
+}
+
+#titleBarCloseButton:hover {
+    background-color: #CC2200;
+    color: #ECECEC;
+}
+
+#titleBarCloseButton:pressed {
+    background-color: #A61B00;
+}
+
+/* ------------------------------ Action bar -------------------------- *
+ * Sits below the title bar. A_DARK_2 lifts it above the #141312
+ * library well it floats over, creating a clear header/content split. */
+
+#actionBar {
+    background-color: #2B302F;
+    border-bottom: 1px solid #3E3A36;
+}
+
+/* Per-view toolbar that holds the section heading + search / sort /
+ * refresh. Sits on A_DARK_1 (content-tier surface) with a thin border
+ * that visually separates it from the darker scroll well below. */
+#libraryToolbar {
+    background-color: #1F2222;
+    border-bottom: 1px solid #2B302F;
+}
+
+/* ------------------------------ Buttons ----------------------------- */
+
+/* Default button — sits a tier below the surface it's placed on
+ * (A_DARK_1 on A_DARK_2 surfaces). Hover lifts to A_DARK_2, pressed
+ * drops back down. */
+QPushButton {
+    background-color: #1F2222;
+    color: #BEB7AF;
+    border: 1px solid #3E3A36;
+    padding: 6px 14px;
+    border-radius: 4px;
+}
+
+QPushButton:hover {
+    background-color: #2B302F;
+    color: #ECECEC;
+    border-color: #6E6860;
+}
+
+QPushButton:pressed {
+    background-color: #353230;
+}
+
+QPushButton:disabled {
+    background-color: #1F2222;
+    color: #555959;
+    border-color: #2B302F;
+}
+
+/* Primary action buttons (New Project, Add Existing, Create, OK) use
+ * MARIGOLD — the warm accent. The dedicated Launch button uses MACHINE
+ * GREEN below so "launch / go" actions read as distinct from generic
+ * "commit this dialog" primary actions. */
+QPushButton#primaryButton {
+    background-color: #FDCF00;      /* MARIGOLD */
+    border: 1px solid #FDCF00;
+    color: #0C0C0C;                 /* A_BLACK — readable on yellow */
+    font-weight: 600;
+}
+
+QPushButton#primaryButton:hover {
+    background-color: #FFE14A;      /* MARIGOLD lightened */
+    border-color: #FFE14A;
+}
+
+QPushButton#primaryButton:pressed {
+    background-color: #E0B700;      /* MARIGOLD darkened */
+}
+
+QPushButton#primaryButton:disabled {
+    background-color: #3E3A36;
+    color: #555959;
+    border-color: #3E3A36;
+}
+
+/* Launch button — two-state design to make "running" unmistakable:
+ *
+ *   NOT running → outlined / "ghost" button. FACTORY GREEN border + text
+ *                 on transparent bg. Hover fills with MACHINE GREEN.
+ *                 Reads as "ready to launch, not yet active".
+ *
+ *   RUNNING     → solid MATRIX GREEN fill, white text. Distinct filled
+ *                 shape signals "this project is currently open in TD".
+ *
+ * The semantic rule: solid green = running. A button that *could* launch
+ * is never solid; only a button representing an already-running state is.
+ */
+QPushButton#launchButton {
+    background-color: transparent;
+    border: 1px solid #70BF44;      /* FACTORY GREEN */
+    color: #70BF44;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    padding-left: 4px;              /* room for the play icon */
+}
+
+QPushButton#launchButton:hover {
+    background-color: #1C7720;      /* MACHINE GREEN fill on hover */
+    border-color: #1C7720;
+    color: #ECECEC;
+}
+
+QPushButton#launchButton:pressed {
+    background-color: #165F1A;      /* MACHINE GREEN darkened */
+    border-color: #165F1A;
+    color: #ECECEC;
+}
+
+QPushButton#launchButton:disabled {
+    background-color: transparent;
+    border: 1px solid #3E3A36;
+    color: #555959;
+}
+
+/* Run settings not reviewed on this machine yet (approval.py) — AMBER
+ * outline instead of green; Launch shows the settings and asks first. */
+QPushButton#launchButton[needsReview="true"] {
+    border-color: #FF8A2F;          /* AMBER */
+    color: #FF8A2F;
+}
+
+QPushButton#launchButton[needsReview="true"]:hover {
+    background-color: #FF8A2F;
+    border-color: #FF8A2F;
+    color: #0C0C0C;
+}
+
+/* Running state — solid MATRIX GREEN. The filled shape (vs. the
+ * outlined resting state) carries most of the signal; the text change
+ * to "● Focus Running" and the different interaction (focus instead of
+ * spawn) are secondary. */
+QPushButton#launchButton[running="true"] {
+    background-color: #07A400;      /* MATRIX GREEN */
+    border: 1px solid #07A400;
+    color: #ECECEC;
+    padding-left: 10px;             /* restore standard padding — no icon in this state */
+}
+
+QPushButton#launchButton[running="true"]:hover {
+    background-color: #26C61F;
+    border-color: #26C61F;
+}
+
+QPushButton#launchButton[running="true"]:pressed {
+    background-color: #058000;
+    border-color: #058000;
+}
+
+/* Card Stop button — only visible when a project is running. Outlined
+ * red to read as a destructive secondary action next to the solid-green
+ * Focus Running button. Fills on hover like the Launch ghost button
+ * does, so both interactive states feel consistent. */
+/* Stop button — compact icon-only. BLAZE outline signals destructive
+ * intent; hover darkens the button rather than filling the same color
+ * as the icon (which would make the icon disappear). */
+QPushButton#cardStopButton {
+    background-color: transparent;
+    border: 1px solid #DB5400;      /* BLAZE */
+    padding: 0;
+}
+
+QPushButton#cardStopButton:hover {
+    background-color: #3E3A36;      /* subtle dark tint, keeps icon readable */
+    border-color: #FF8A2F;          /* AMBER — brighter border on hover */
+}
+
+QPushButton#cardStopButton:pressed {
+    background-color: #4C4844;
+    border-color: #BB4300;          /* BRICK */
+}
+
+/* ------------------------------ Inputs ------------------------------ */
+
+QLineEdit, QTextEdit, QComboBox {
+    background-color: #0C0C0C;
+    border: 1px solid #2B302F;
+    border-radius: 3px;
+    padding: 6px 8px;
+    color: #ECECEC;
+    selection-background-color: #FDCF00;
+    selection-color: #0C0C0C;
+}
+
+QLineEdit:focus, QTextEdit:focus, QComboBox:focus {
+    border-color: #FDCF00;
+}
+
+/* Read-only list of what a project runs (Review Before Running dialog). */
+QPlainTextEdit#runApprovalDetails {
+    background-color: #0C0C0C;
+    border: 1px solid #2B302F;
+    border-radius: 3px;
+    padding: 6px 8px;
+    color: #ECECEC;
+    selection-background-color: #FDCF00;
+    selection-color: #0C0C0C;
+}
+
+QLineEdit:disabled, QTextEdit:disabled, QComboBox:disabled {
+    color: #555959;
+    background-color: #141312;
+}
+
+QSpinBox, QDoubleSpinBox {
+    background-color: #0C0C0C;
+    border: 1px solid #2B302F;
+    border-radius: 3px;
+    padding: 4px 6px;
+    color: #ECECEC;
+    selection-background-color: #FDCF00;
+    selection-color: #0C0C0C;
+}
+
+QSpinBox:focus, QDoubleSpinBox:focus {
+    border-color: #FDCF00;
+}
+
+QSpinBox:disabled, QDoubleSpinBox:disabled {
+    color: #555959;
+    background-color: #141312;
+    border-color: #262422;
+}
+
+/* Variables table (Edit Details). Inherits the input palette so rows
+ * read as editable without feeling heavy. */
+QTableWidget {
+    background-color: #141312;
+    border: 1px solid #2B302F;
+    border-radius: 3px;
+    color: #ECECEC;
+    gridline-color: #2B302F;
+    selection-background-color: #3E3A36;
+    selection-color: #FDCF00;
+    alternate-background-color: #0C0C0C;
+}
+
+QTableWidget::item {
+    padding: 4px 6px;
+}
+
+QHeaderView::section {
+    background-color: #1F2222;
+    color: #ECECEC;
+    padding: 4px 6px;
+    border: none;
+    border-right: 1px solid #2B302F;
+    border-bottom: 1px solid #2B302F;
+}
+
+/* QComboBox dropped into a QTableWidget cell (variables Type column).
+ * Strip the combo's own border / padding / radius so it sits flush with
+ * the cell — no double frame between the combo and the gridline. */
+QTableWidget QComboBox {
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0 8px;
+    color: #ECECEC;
+}
+
+QTableWidget QComboBox:focus {
+    background-color: rgba(253, 207, 0, 25);  /* faint MARIGOLD focus tint */
+}
+
+/* Disabled-state contrast for QLabel + QCheckBox so "gated off"
+ * sections read as clearly inactive against the dark theme. Qt's
+ * default disabled palette is too close to the live color to signal
+ * state transitions at a glance. */
+QLabel:disabled {
+    color: #555959;
+}
+
+QCheckBox:disabled {
+    color: #555959;
+}
+
+QCheckBox::indicator:disabled {
+    border-color: #2B302F;
+    background: #141312;
+}
+
+/* Edit Details page — sticky header sits at the top of the content area
+ * with Save / Cancel buttons; the body below scrolls. The header gets a
+ * subtle bottom border so the scroll seam reads as a defined edge. */
+#editDetailsView {
+    background-color: #1F2222;          /* matches the default content surface */
+}
+
+#editDetailsHeader {
+    background-color: #2B302F;          /* A_DARK_2 — slightly raised "chrome" */
+    border-bottom: 1px solid #0C0C0C;
+}
+
+#editDetailsScroll {
+    background-color: #1F2222;
+    border: none;
+}
+
+#editDetailsContent {
+    background-color: #1F2222;
+}
+
+/* Subtle 1px rule between top-level sections (form / Run / env vars /
+ * Output / thumbnail / metadata). Matches the env-row divider color
+ * so the page reads as one consistent grid of separators rather than
+ * mixing palette tones. */
+#editDetailsSeparator {
+    background-color: #2B302F;               /* A_DARK_2 — same as #varRow */
+}
+
+/* Env-var rows on the Edit Details page — vertical stack of inline
+ * field rows separated by a thin divider, instead of a QTableWidget.
+ * Each row's fields use placeholder text in lieu of column headers. */
+#varRow {
+    border-bottom: 1px solid #2B302F;        /* A_DARK_2 — subtle separator */
+}
+
+#varRemoveButton {
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+}
+
+#varRemoveButton:hover {
+    background-color: #2B302F;
+}
+
+#varRemoveButton:pressed {
+    background-color: #3E3A36;
+}
+
+/* Launch-dependency rows — same divider pattern as #varRow. */
+#depRow {
+    border-bottom: 1px solid #2B302F;            /* A_DARK_2 — subtle separator */
+}
+
+/* Live status pill on each dep row. The `state` property is set by
+ * EditDetailsView._refresh_running_state and drives the foreground
+ * color: green while running, factory-green when a one-shot
+ * completed cleanly, blaze on error / unexpected stop, muted gray
+ * for "not spawned". */
+#depStatusPill {
+    background: transparent;
+    color: #7D93AF;                              /* STEEL BLUE — neutral fallback */
+    font-size: 11px;
+    padding: 0 6px;
+    min-width: 110px;
+}
+
+#depStatusPill[state="running"] {
+    color: #07A400;                              /* MATRIX GREEN */
+}
+
+#depStatusPill[state="done"] {
+    color: #70BF44;                              /* FACTORY GREEN */
+}
+
+#depStatusPill[state="error"],
+#depStatusPill[state="stopped"] {
+    color: #DB5400;                              /* BLAZE */
+}
+
+#depStatusPill[state="idle"] {
+    color: #7D93AF;                              /* STEEL BLUE — muted */
+}
+
+/* New Project page — same sticky-header + scrollable-body pattern as
+ * Edit Details. */
+#newProjectView {
+    background-color: #1F2222;
+}
+
+#newProjectHeader {
+    background-color: #2B302F;
+    border-bottom: 1px solid #0C0C0C;
+}
+
+#newProjectScroll {
+    background-color: #1F2222;
+    border: none;
+}
+
+#newProjectContent {
+    background-color: #1F2222;
+}
+
+/* Settings page — scrolls since the TouchDesigner Preferences section. */
+#settingsScroll,
+#settingsContent {
+    background-color: #1F2222;      /* A_DARK_1 */
+    border: none;
+}
+
+/* TD preferences warnings (drift note, Python-path warning). */
+#tdPrefsWarning {
+    color: #DB5400;                 /* BLAZE */
+    font-size: 12px;
+}
+
+/* Notice banner above the content views — launch-time TD preference
+ * changes. BLAZE edge marks it as a warning without shouting. */
+#noticeBanner {
+    background-color: #2B302F;      /* A_DARK_2 */
+    border: none;
+    border-left: 3px solid #DB5400; /* BLAZE */
+    border-bottom: 1px solid #0C0C0C;
+}
+
+#noticeBannerText {
+    color: #ECECEC;                 /* A_WHITE */
+    font-size: 13px;
+}
+
+QCheckBox::indicator:checked:disabled {
+    background: #555959;
+    border-color: #555959;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    border: 0;
+    width: 20px;
+}
+
+QComboBox::down-arrow {
+    image: url({ICONS}/arrow-down.svg);
+    width: 10px;
+    height: 6px;
+    margin-right: 4px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #0C0C0C;
+    color: #ECECEC;
+    border: 1px solid #3E3A36;
+    selection-background-color: #3E3A36;
+    selection-color: #FDCF00;
+}
+
+QCheckBox {
+    spacing: 8px;
+    color: #BEB7AF;
+}
+
+QCheckBox::indicator {
+    width: 14px;
+    height: 14px;
+    border: 1px solid #6E6860;
+    border-radius: 2px;
+    background: #0C0C0C;
+}
+
+QCheckBox::indicator:hover {
+    border-color: #FDCF00;
+}
+
+QCheckBox::indicator:checked {
+    background: #FDCF00;
+    border-color: #FDCF00;
+    image: url({ICONS}/check-x.svg);
+}
+
+QProgressBar {
+    background-color: #0C0C0C;
+    border: 1px solid #2B302F;
+    border-radius: 3px;
+    color: #ECECEC;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: #FDCF00;
+    border-radius: 2px;
+}
+
+/* --------------------------- List widgets -------------------------- */
+
+QListWidget {
+    background-color: #0C0C0C;
+    border: 1px solid #2B302F;
+    border-radius: 3px;
+    padding: 4px;
+    outline: 0;
+}
+
+QListWidget::item {
+    padding: 8px 10px;
+    border-radius: 2px;
+    color: #BEB7AF;
+}
+
+QListWidget::item:hover {
+    background-color: #1F2222;
+    color: #ECECEC;
+}
+
+QListWidget::item:selected {
+    background-color: #3E3A36;
+    color: #FDCF00;
+}
+
+/* --------------------------- Menus / misc -------------------------- */
+
+QMenu {
+    background-color: #0C0C0C;
+    border: 1px solid #3E3A36;
+    color: #BEB7AF;
+    padding: 4px 0;
+}
+
+QMenu::item {
+    padding: 6px 18px;
+    background: transparent;
+}
+
+QMenu::item:selected {
+    background-color: #3E3A36;
+    color: #FDCF00;
+}
+
+QMenu::separator {
+    height: 1px;
+    background: #2B302F;
+    margin: 4px 8px;
+}
+
+QDialog {
+    background-color: #26292A;
+    color: #BEB7AF;
+}
+
+/* Dialogs sit on a slightly lifted surface with a subtle border so they
+ * visually separate from the main window behind them. #dialogRoot owns
+ * the border; title bar / content inside just fill. */
+#dialogRoot {
+    background-color: #26292A;
+    border: 1px solid #3E3A36;
+}
+
+#dialogTitleBar {
+    background-color: #17181A;
+    border-bottom: 1px solid #3E3A36;
+}
+
+#dialogTitleBarTitle {
+    color: #ECECEC;
+    font-size: 12px;
+    font-weight: 600;
+    padding-left: 4px;
+    letter-spacing: 0.3px;
+}
+
+#dialogContent {
+    background-color: #26292A;
+}
+
+#dialogMessage {
+    color: #ECECEC;
+    font-size: 13px;
+    padding: 4px 0 8px 0;
+}
+
+/* Thumbnail preview in the Edit Details dialog. */
+#thumbPreview {
+    background-color: #141312;
+    border: 1px solid #3E3A36;
+    border-radius: 4px;
+    color: #6E6860;
+    font-size: 11px;
+}
+
+/* Tag picker modal — the scrollable list of checkboxes shares the
+ * field treatment (A_BLACK fill, thin #2B302F border, 3px radius) so
+ * the modal's "pick from this list" area reads as an input, not a
+ * floating scroll of content. */
+#tagPickerScroll {
+    background-color: #0C0C0C;
+    border: 1px solid #2B302F;
+    border-radius: 3px;
+}
+
+#tagPickerList {
+    background-color: #0C0C0C;
+    border: none;
+}
+
+/* Tag chip — rounded pill with STEEL BLUE accent. Shared between the
+ * chip-bar in dialogs and the tag-chip row on project cards. */
+#tagChip {
+    background-color: rgba(125, 147, 175, 30);  /* STEEL BLUE @ ~12% */
+    border: 1px solid #7D93AF;                  /* STEEL BLUE */
+    color: #A4B7CE;                             /* WILD BLUE */
+    border-radius: 9px;
+    padding: 1px 8px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Tighter variant used on project cards — less padding, smaller
+ * footprint, same color identity so chips read as related to the
+ * dialog chips. */
+#cardTagChip {
+    background-color: rgba(125, 147, 175, 30);
+    border: 1px solid #7D93AF;
+    color: #A4B7CE;
+    border-radius: 8px;
+    padding: 0px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    min-height: 14px;
+}
+
+QToolTip {
+    background-color: #0C0C0C;
+    color: #ECECEC;
+    border: 1px solid #FDCF00;
+    padding: 4px 6px;
+}
+
+QScrollArea {
+    background-color: transparent;
+    border: none;
+}
+
+QScrollBar:vertical {
+    background: #1F2222;
+    width: 10px;
+    margin: 0;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background: #3E3A36;
+    border-radius: 5px;
+    min-height: 24px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #4C4844;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+    height: 0;
+}
+
+QScrollBar:horizontal {
+    background: #1F2222;
+    height: 10px;
+    border: none;
+}
+
+QScrollBar::handle:horizontal {
+    background: #3E3A36;
+    border-radius: 5px;
+    min-width: 24px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #4C4844;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+    width: 0;
+}
+
+/* --------------------------- Custom IDs ---------------------------- */
+
+#placeholderTitle {
+    font-size: 22px;
+    font-weight: 600;
+    color: #9D948B;
+}
+
+#placeholderSubtitle {
+    color: #555959;
+    margin-top: 8px;
+}
+
+/* Heading tiers — three distinct shades so hierarchy reads at a glance.
+ * h1 (sectionHeading): A_WHITE, largest
+ * h2 (subHeading):     HAZY, mid
+ * h3 (tertiaryHeading): MUD PUDDLE, small
+ * All uppercase for h2/h3 would be too loud; kept sentence-case. */
+#sectionHeading {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ECECEC;                 /* A_WHITE */
+    margin-bottom: 14px;
+    letter-spacing: -0.2px;
+}
+
+#subHeading {
+    font-size: 14px;
+    font-weight: 600;
+    color: #BEB7AF;                 /* HAZY */
+    margin-top: 4px;
+    letter-spacing: 0.1px;
+}
+
+#tertiaryHeading {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9D948B;                 /* MUD PUDDLE */
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+#pathPreview {
+    color: #9D948B;
+    font-size: 12px;
+}
+
+#pathPreview:disabled {
+    color: #555959;
+}
+
+#templateDescription {
+    color: #9D948B;
+    font-size: 12px;
+}
+
+#dialogTitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: #ECECEC;
+}
+
+/* ---------------------------- Project cards ------------------------ *
+ * Lifted surfaces — A_DARK_2 with a 1px darker edge so the card reads
+ * as raised against the #141312 library well. Drop shadow is applied
+ * in project_card.py via QGraphicsDropShadowEffect (QSS has no shadow
+ * primitive). Hover slightly brightens the surface + the card border
+ * tightens to an accent-alt hue. */
+
+#projectCard {
+    background-color: #2B302F;
+    border: 1px solid #3E3A36;
+    border-radius: 6px;
+}
+
+#projectCard:hover {
+    background-color: #30353A;
+    border-color: #555959;
+}
+
+/* Pinned state — MARIGOLD border + slightly lifted surface. Hover
+ * lightens the accent so interactive feedback still reads. */
+#projectCard[pinned="true"] {
+    background-color: #30322D;
+    border: 1px solid #FDCF00;
+}
+
+#projectCard[pinned="true"]:hover {
+    background-color: #36382E;
+    border-color: #FFE14A;
+}
+
+/* Title row sits at the top of the card and carries a thin bottom
+ * border so the project name reads as a header strip distinct from
+ * the meta / toe list below. */
+#cardTitleRow {
+    border-bottom: 1px solid #3E3A36;
+}
+
+#cardName {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ECECEC;                 /* A_WHITE — title emphasis */
+    padding: 0;
+}
+
+/* Toe filename uses STEEL BLUE (industrial palette secondary accent).
+ * Reads as a "technical" / file-path field and differentiates clearly
+ * from the A_WHITE title without competing with the MARIGOLD accent. */
+#cardToe {
+    color: #7D93AF;                 /* STEEL BLUE */
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0;
+}
+
+#cardToeCombo {
+    background-color: transparent;
+    border: none;
+    color: #7D93AF;                 /* STEEL BLUE */
+    padding: 0;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+#cardToeCombo:hover {
+    color: #A4B7CE;                 /* WILD BLUE — lighter STEEL BLUE sibling */
+}
+
+/* Multi-toe dropdown trigger — same resting look as #cardToe labels,
+ * but brightens to WILD BLUE on hover so it reads as interactive. Used
+ * on cards with more than one .toe file so the user can toggle which
+ * ones launch without opening Edit Details. */
+QPushButton#cardToeButton {
+    background-color: transparent;
+    border: none;
+    color: #7D93AF;                 /* STEEL BLUE */
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0;
+    text-align: left;
+}
+
+QPushButton#cardToeButton:hover {
+    color: #A4B7CE;                 /* WILD BLUE */
+}
+
+QPushButton#cardToeButton:pressed {
+    color: #FDCF00;                 /* MARIGOLD flash on click */
+}
+
+/* Multi-toe checkbox list on cards. STEEL BLUE label to match the
+ * single-toe cardToe style; MARIGOLD fill + dark-X when checked, using
+ * the same indicator style as every other QCheckBox. */
+#cardToeCheck {
+    color: #7D93AF;                 /* STEEL BLUE */
+    font-size: 13px;
+    font-weight: 500;
+    spacing: 6px;
+    padding: 1px 0;
+}
+
+#cardToeCheck:hover {
+    color: #A4B7CE;                 /* WILD BLUE */
+}
+
+#cardToeCombo::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 18px;
+    border: none;
+}
+
+#cardToeCombo::down-arrow {
+    image: url({ICONS}/arrow-down.svg);
+    width: 10px;
+    height: 6px;
+}
+
+#cardMeta {
+    color: #9D948B;
+    font-size: 12px;
+    padding: 0;
+}
+
+/* Kind/version badge in the meta row — same muted gray as the
+ * last-opened timestamp on its left. Keeps the row visually balanced;
+ * the kind name reads as metadata, not as an accent. */
+#cardVersion {
+    color: #9D948B;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0;
+    letter-spacing: 0.2px;
+}
+
+#cardDescription {
+    color: #BEB7AF;
+    font-size: 12px;
+    padding: 0;
+}
+
+#cardWarning {
+    color: #DB5400;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0;
+}
+
+/* Autostart & monitoring button — lives in the card title row to the
+ * left of the tag button. Always visible; the [active="true"] variant
+ * swaps in a MATRIX-GREEN tint so cards whose project has an autostart
+ * feature enabled (launch-on-startup or reopen-on-crash) still read at
+ * a glance without hiding the control entirely. Matches the running
+ * launch button's green so "green = tied to the running ecosystem". */
+#cardAutoStartButton {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 0;
+}
+
+#cardAutoStartButton:hover {
+    background-color: #3E3A36;
+    border-color: #3E3A36;
+}
+
+#cardAutoStartButton:pressed {
+    background-color: #4C4844;
+}
+
+#cardAutoStartButton[active="true"] {
+    background-color: rgba(7, 164, 0, 40);
+    border: 1px solid #07A400;
+}
+
+#cardAutoStartButton[active="true"]:hover {
+    background-color: rgba(7, 164, 0, 70);
+    border-color: #07A400;
+}
+
+#cardMenuButton {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 0;
+}
+
+#cardMenuButton:hover {
+    background-color: #3E3A36;
+    border-color: #3E3A36;
+}
+
+#cardMenuButton:pressed {
+    background-color: #4C4844;
+}
+
+#cardIconButton {
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 0;
+}
+
+#cardIconButton:hover {
+    background-color: #3E3A36;
+    border-color: #3E3A36;
+}
+
+#cardIconButton:pressed {
+    background-color: #4C4844;
+}
+
+#emptyLibrary {
+    color: #6E6860;
+    font-size: 14px;
+    padding: 60px 20px;
+    background: transparent;
+}
+
+/* Breadcrumb row — sits above the tag tiles / project grid. Active
+ * segments read as clickable MARIGOLD links; the current leaf is muted
+ * + disabled so it doesn't look interactive. */
+#breadcrumbRow {
+    background: transparent;
+}
+
+QPushButton#breadcrumbLink {
+    background: transparent;
+    border: none;
+    color: #BEB7AF;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+QPushButton#breadcrumbLink:hover {
+    color: #FDCF00;
+    text-decoration: underline;
+}
+
+QPushButton#breadcrumbLeaf {
+    background: transparent;
+    border: none;
+    color: #ECECEC;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+QPushButton#breadcrumbLeaf:disabled {
+    color: #ECECEC;
+}
+
+#breadcrumbSeparator {
+    color: #555959;
+    font-size: 12px;
+    padding: 0 2px;
+}
+
+/* Tag tile — drill-down affordance in the content area. A distinctly
+ * cooler bluish surface (vs. project cards' warm A_DARK_2) reinforces
+ * the "tags live over here" split. Bigger icon + flow-layout sizing
+ * handled in code; this block only styles the surface / padding. */
+QPushButton#tagTile {
+    background-color: #2A3138;           /* cool dark — distinct from cards */
+    border: 1px solid #3E3A36;
+    border-left: 3px solid #7D93AF;      /* STEEL BLUE edge accent */
+    border-radius: 6px;
+    color: #ECECEC;
+    text-align: left;
+    padding: 10px 16px 10px 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QPushButton#tagTile:hover {
+    background-color: #323A42;
+    border-color: #555959;
+    border-left: 3px solid #FDCF00;      /* MARIGOLD on hover */
+}
+
+QPushButton#tagTile:pressed {
+    background-color: #3A434B;
+}
+
+/* Drag-over highlight — MARIGOLD ring + warmer surface so the user
+ * knows the tile will accept the drop. Driven by the `dropActive`
+ * dynamic property set in TagTile.dragEnterEvent. */
+QPushButton#tagTile[dropActive="true"] {
+    background-color: #3A3628;
+    border: 1px solid #FDCF00;
+    border-left: 3px solid #FDCF00;
+}
+
+/* The grid behind cards is painted by _GridBackground in library_view.py;
+ * the container just provides transparent layout. */
+#libraryContainer {
+    background: transparent;
+}
+
+#emptyLibraryWrapper {
+    background: transparent;
+}
+
+/* --------------------------- OutputView -------------------------- *
+ * Modeless dialog showing a project's captured stdout/stderr. The
+ * status pill uses dynamic attribute-selectors driven by `setProperty
+ * ("status", "running"|"exited"|"idle")` in OutputView, mirroring the
+ * `[pinned="true"]` pattern on project cards. */
+
+#outputStatusPill {
+    background-color: #2B302F;          /* A_DARK_2 — fits the dialog body */
+    color: #BEB7AF;
+    border: 1px solid #3E3A36;
+    border-radius: 9px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+#outputStatusPill[status="running"] {
+    background-color: #1F3A20;          /* dim MATRIX GREEN tint */
+    color: #07A400;                     /* MATRIX GREEN — alive */
+    border-color: #07A400;
+}
+
+#outputStatusPill[status="exited"] {
+    background-color: #2B302F;
+    color: #9D948B;                     /* MUD PUDDLE — settled */
+    border-color: #6E6860;
+}
+
+#outputStatusPill[status="idle"] {
+    background-color: #2B302F;
+    color: #9D948B;
+    border-color: #3E3A36;
+}
+
+/* Monospace log body. No frame; surface picks up the dialog's content
+ * color so the body reads as a flat embedded panel rather than a
+ * separately-walled widget. */
+#outputBody {
+    background-color: #0C0C0C;          /* A_BLACK — recessed log surface */
+    color: #ECECEC;                     /* A_WHITE — high contrast on near-black */
+    border: 1px solid #2B302F;
+    border-radius: 4px;
+    padding: 8px 10px;
+    selection-background-color: #FDCF00;
+    selection-color: #0C0C0C;
+}

@@ -1,0 +1,49 @@
+schema: 1
+kind: nodejs
+name: osc-websocket-bridge
+description: >-
+  OSC ↔ WebSocket bridge — receives OSC over UDP from TouchDesigner /
+  Resolume / Notch / Ableton, broadcasts to connected browser clients;
+  WS messages from browsers go back out as OSC. Includes a tiny demo
+  page at HTTP_PORT showing live OSC traffic.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+  PROJECT_SLUG: "{{project:slug}}"
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/package.json, dst: package.json, substitute: true, overwrite: true}
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}
+
+variables:
+  - name: OSC_IN_PORT
+    type: int
+    default: 7400
+    prompt: "OSC inbound UDP port (this bridge listens here)"
+    description: "Point your TD CHOP-OSCOUT / Resolume / etc. at this port."
+  - name: OSC_OUT_HOST
+    type: string
+    default: 127.0.0.1
+    prompt: "OSC outbound host"
+    description: "Where browser-originated OSC messages get forwarded."
+  - name: OSC_OUT_PORT
+    type: int
+    default: 7401
+    prompt: "OSC outbound UDP port"
+  - name: WS_PORT
+    type: int
+    default: 8080
+    prompt: "WebSocket server port"
+    description: "Browser clients connect here (ws://localhost:WS_PORT)."
+  - name: PORT
+    type: int
+    default: 3000
+    prompt: "HTTP server port (demo page)"
+    description: "Open in a browser to see live OSC traffic."
+  - name: HOST
+    type: string
+    default: localhost
+    prompt: "HTTP bind host"

@@ -1,0 +1,14 @@
+{
+  "name": "{{PROJECT_SLUG}}",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node bridge.js",
+    "dev": "node --watch bridge.js"
+  },
+  "dependencies": {
+    "osc": "^2.4.5",
+    "ws": "^8.18.0"
+  }
+}

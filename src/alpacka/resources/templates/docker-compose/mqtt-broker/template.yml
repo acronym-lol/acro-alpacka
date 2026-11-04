@@ -1,0 +1,27 @@
+schema: 1
+kind: docker-compose
+name: mqtt-broker
+description: >-
+  Eclipse Mosquitto MQTT broker — TCP on 1883, WebSockets on 9001.
+  Anonymous access enabled by default (dev mode); README documents
+  enabling auth. Pairs with python/mqtt-client and nodejs/mqtt-client.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}
+
+variables:
+  - name: MQTT_PORT
+    type: int
+    default: 1883
+    prompt: "MQTT TCP port"
+  - name: MQTT_WS_PORT
+    type: int
+    default: 9001
+    prompt: "MQTT over WebSocket port"
+    description: "Use this from browsers (mqtt.js with ws:// transport)."

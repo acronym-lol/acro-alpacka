@@ -1,0 +1,24 @@
+schema: 1
+kind: nodejs
+name: node-minimal
+description: >-
+  Bare Node.js starter — package.json with `start` and `dev --watch` scripts,
+  a single index.js entry point, ES modules enabled. For anyone who wants
+  the minimum possible surface.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+  PROJECT_SLUG: "{{project:slug}}"
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/package.json, dst: package.json, substitute: true, overwrite: true}
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}
+
+variables:
+  - name: PORT
+    type: int
+    default: 3000
+    prompt: "Default port (used by your app if/when you spin up a server)"

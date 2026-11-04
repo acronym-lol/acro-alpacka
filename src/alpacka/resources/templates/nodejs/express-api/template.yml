@@ -1,0 +1,28 @@
+schema: 1
+kind: nodejs
+name: express-api
+description: >-
+  Express REST API starter — app.js bootstrap, routes/ folder, CORS + dotenv,
+  PORT/HOST variables, nodemon for dev reload. Click Launch to run `npm run dev`.
+  Run `npm install` in the project folder after create.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+  PROJECT_SLUG: "{{project:slug}}"
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/package.json, dst: package.json, substitute: true, overwrite: true}
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}
+
+variables:
+  - name: PORT
+    type: int
+    default: 3000
+    prompt: "HTTP server port"
+  - name: HOST
+    type: string
+    default: localhost
+    prompt: "Bind host"

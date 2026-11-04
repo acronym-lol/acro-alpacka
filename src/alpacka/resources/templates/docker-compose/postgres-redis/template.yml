@@ -1,0 +1,39 @@
+schema: 1
+kind: docker-compose
+name: postgres-redis
+description: >-
+  Dev-stack baseline — Postgres 16 + Redis 7 on standard ports, with named
+  volumes for persistence. Launch runs `docker compose up`; stop brings the
+  stack down cleanly. Requires Docker Desktop / Colima / etc. on PATH.
+
+substitutions:
+  PROJECT_NAME: "{{project:name}}"
+
+trees:
+  - {src: files, dst: .}
+
+files:
+  - {src: files/README.md, dst: README.md, substitute: true, overwrite: true}
+
+variables:
+  - name: POSTGRES_USER
+    type: string
+    default: postgres
+    prompt: "Postgres user"
+  - name: POSTGRES_PASSWORD
+    type: string
+    default: postgres
+    prompt: "Postgres password"
+    description: "Consider moving to alpacka.local.yml if you care about not committing this."
+  - name: POSTGRES_DB
+    type: string
+    default: app
+    prompt: "Postgres database name"
+  - name: POSTGRES_PORT
+    type: int
+    default: 5432
+    prompt: "Postgres host port"
+  - name: REDIS_PORT
+    type: int
+    default: 6379
+    prompt: "Redis host port"
