@@ -1,0 +1,20 @@
+# Dependabot: keep ALPACKA's own Python dependencies and the pinned GitHub
+# Actions (release.yml / ci.yml pin them by commit SHA) up to date.
+#
+# The project templates under src/alpacka/resources/templates are skipped:
+# their manifests (pyproject.toml, package.json) contain {{PLACEHOLDERS}}
+# that only become valid once ALPACKA creates a project from them, so
+# Dependabot can't parse them.
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    exclude-paths:
+      - "src/alpacka/resources/templates/**"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
