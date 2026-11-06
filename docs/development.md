@@ -49,6 +49,8 @@ python build.py
 
 The spec uses `--onedir --windowed` so the build is a folder containing `ALPACKA.exe` (Windows) or `ALPACKA.app` (macOS). Zip and distribute.
 
+On macOS, PyInstaller signs `ALPACKA.app` at the end of its build. Anything added to the bundle afterwards breaks that signature, and macOS then says a downloaded copy is damaged and won't open it. So `build.py` signs the app again (ad hoc) after copying in the licence files, then checks it with `codesign --verify --deep --strict` and fails if the check doesn't pass. `installer/make_dmg.sh` packages the DMG and checks the app inside it again. CI runs both on every pull request.
+
 ## Code conventions
 
 - Relative imports inside the `alpacka` package (`from . import db`, `from .ui.main_window import MainWindow`). Never `from alpacka import X`.
