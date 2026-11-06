@@ -172,7 +172,33 @@ def main() -> int:
     app_bundle = DIST / "ALPACKA.app"
     if app_bundle.is_dir():
         copy_notices(app_bundle / "Contents" / "Resources")
+        return sign_app(app_bundle) or check_app_signature(app_bundle)
     return 0
+
+
+def sign_app(app: Path) -> int:
+    """Sign the macOS bundle again, after the last file has gone in.
+
+    PyInstaller signs ALPACKA.app at the end of its own build, before the
+    licence files are copied into Contents/Resources. Adding a file to a
+    signed bundle breaks its signature (v0.9.0 shipped that way), so sign
+    once more here. It's an ad-hoc signature, like PyInstaller's: ALPACKA
+    has no Developer ID yet.
+    """
+    return subprocess.call(["codesign", "--force", "--deep", "--sign", "-", str(app)])
+
+
+def check_app_signature(app: Path) -> int:
+    """Fail the build if the macOS bundle's signature doesn't hold.
+
+    macOS refuses to open a downloaded app whose signature is broken and
+    calls it "damaged", which is all a user sees. Checking here makes a
+    broken bundle fail CI and the release instead of shipping.
+    """
+    rc = subprocess.call(["codesign", "--verify", "--deep", "--strict", "--verbose=2", str(app)])
+    if rc != 0:
+        print("error: ALPACKA.app's code signature is broken", file=sys.stderr)
+    return rc
 
 
 if __name__ == "__main__":

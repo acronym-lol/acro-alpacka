@@ -134,42 +134,13 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install create-dmg
 
+      # Same script CI runs on every pull request. It also checks the app's
+      # signature inside the finished DMG.
       - name: Create DMG (macOS)
         if: runner.os == 'macOS'
         env:
           VERSION: ${{ steps.version.outputs.v }}
-        run: |
-          set -euo pipefail
-          DMG_NAME="ALPACKA-${VERSION}-macos.dmg"
-          # PyInstaller (--windowed, onedir) emits dist/ALPACKA.app on macOS.
-          # Fall back to dist/ALPACKA if a future PyInstaller version changes
-          # the layout so we catch the regression instead of silently
-          # shipping an empty DMG.
-          if [ -d "dist/ALPACKA.app" ]; then
-            APP_PATH="dist/ALPACKA.app"
-          elif [ -d "dist/ALPACKA/ALPACKA.app" ]; then
-            APP_PATH="dist/ALPACKA/ALPACKA.app"
-          else
-            echo "::error::No .app bundle found under dist/" >&2
-            ls -la dist/
-            exit 1
-          fi
-          echo "Packaging $APP_PATH → $DMG_NAME"
-          # create-dmg occasionally exits non-zero after successfully
-          # producing the file (AppleScript timing quirks on CI). Tolerate
-          # that and assert on the file's existence instead.
-          create-dmg \
-            --volname "ALPACKA ${VERSION}" \
-            --window-pos 200 120 \
-            --window-size 600 400 \
-            --icon-size 100 \
-            --icon "ALPACKA.app" 175 190 \
-            --hide-extension "ALPACKA.app" \
-            --app-drop-link 425 190 \
-            "$DMG_NAME" \
-            "$APP_PATH" || true
-          test -f "$DMG_NAME" || { echo "::error::DMG missing"; exit 1; }
-          echo "Wrote $DMG_NAME ($(stat -f%z "$DMG_NAME") bytes)"
+        run: bash installer/make_dmg.sh "$VERSION"
 
       - name: Checksums (macOS)
         if: runner.os == 'macOS'

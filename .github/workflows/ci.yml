@@ -55,3 +55,50 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: |
           python -c "import alpacka; from alpacka import app, db, library, settings, paths, updater; from alpacka.ui import main_window, title_bar, frameless, settings_view; assert updater.compare_versions('0.2.0', '0.1.0') == 1; print('alpacka', alpacka.__version__)"
+
+  # release.yml only runs on a tag, so without this job the macOS app is
+  # first built on release day and first opened by whoever downloads it.
+  # v0.9.0 shipped with a broken signature that way, and macOS called the
+  # app "damaged". This job runs the release's build and DMG steps (both
+  # check the signature), then checks the built app starts and keeps
+  # running.
+  build-macos:
+    name: Build macOS app
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Build and check the signature
+        run: python build.py
+
+      - name: Create the DMG and check the app inside it
+        run: |
+          brew install create-dmg
+          bash installer/make_dmg.sh "$(python -c 'import alpacka; print(alpacka.__version__)')"
+
+      - name: Start the built app
+        run: |
+          dist/ALPACKA.app/Contents/MacOS/ALPACKA &
+          pid=$!
+          sleep 20
+          if kill -0 "$pid" 2>/dev/null; then
+            kill "$pid"
+            echo "ALPACKA was still running after 20 s"
+          else
+            code=0
+            wait "$pid" || code=$?
+            echo "::error::ALPACKA exited during startup (exit code $code)"
+            exit 1
+          fi
