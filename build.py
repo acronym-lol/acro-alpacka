@@ -172,8 +172,20 @@ def main() -> int:
     app_bundle = DIST / "ALPACKA.app"
     if app_bundle.is_dir():
         copy_notices(app_bundle / "Contents" / "Resources")
-        return check_app_signature(app_bundle)
+        return sign_app(app_bundle) or check_app_signature(app_bundle)
     return 0
+
+
+def sign_app(app: Path) -> int:
+    """Sign the macOS bundle again, after the last file has gone in.
+
+    PyInstaller signs ALPACKA.app at the end of its own build, before the
+    licence files are copied into Contents/Resources. Adding a file to a
+    signed bundle breaks its signature (v0.9.0 shipped that way), so sign
+    once more here. It's an ad-hoc signature, like PyInstaller's: ALPACKA
+    has no Developer ID yet.
+    """
+    return subprocess.call(["codesign", "--force", "--deep", "--sign", "-", str(app)])
 
 
 def check_app_signature(app: Path) -> int:

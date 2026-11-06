@@ -59,8 +59,9 @@ jobs:
   # release.yml only runs on a tag, so without this job the macOS app is
   # first built on release day and first opened by whoever downloads it.
   # v0.9.0 shipped with a broken signature that way, and macOS called the
-  # app "damaged". build.py checks the bundle's signature; this job also
-  # checks the built app starts and keeps running.
+  # app "damaged". This job runs the release's build and DMG steps (both
+  # check the signature), then checks the built app starts and keeps
+  # running.
   build-macos:
     name: Build macOS app
     runs-on: macos-latest
@@ -81,6 +82,11 @@ jobs:
 
       - name: Build and check the signature
         run: python build.py
+
+      - name: Create the DMG and check the app inside it
+        run: |
+          brew install create-dmg
+          bash installer/make_dmg.sh "$(python -c 'import alpacka; print(alpacka.__version__)')"
 
       - name: Start the built app
         run: |
