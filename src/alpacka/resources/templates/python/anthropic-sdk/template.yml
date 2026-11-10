@@ -3,8 +3,9 @@ kind: python
 name: anthropic-sdk
 description: >-
   Claude API starter — anthropic SDK with prompt caching, adaptive thinking,
-  multi-turn conversation, and stop_reason handling. Defaults to Claude Sonnet
-  4.6; pick Opus 4.7 / Haiku 4.5 in variables. Loads ANTHROPIC_API_KEY from .env.
+  refusal fallbacks, multi-turn conversation, and stop_reason handling.
+  Defaults to Claude Opus 5.5; pick Sonnet 5.5 / Haiku 5.5 in variables.
+  Loads ANTHROPIC_API_KEY from .env.
 
 substitutions:
   PROJECT_NAME: "{{project:name}}"
@@ -25,27 +26,23 @@ variables:
   - name: ANTHROPIC_MODEL
     type: enum
     prompt: "Claude model"
-    default: claude-sonnet-4-6
-    description: "Sonnet for balance, Opus for hard problems, Haiku for speed/cost."
+    default: claude-opus-5-5
+    description: "Opus for the hardest work, Sonnet for everyday speed, Haiku for speed and cost."
     options:
-      - {value: claude-sonnet-4-6, label: "Sonnet 4.6 — best speed/intelligence balance"}
-      - {value: claude-opus-4-7, label: "Opus 4.7 — most capable; coding + agentic"}
-      - {value: claude-haiku-4-5, label: "Haiku 4.5 — fastest, most cost-effective"}
-  - name: USE_ADAPTIVE_THINKING
-    type: bool
-    default: true
-    prompt: "Enable adaptive thinking"
-    description: "Claude decides depth per request. Adds latency; better answers."
+      - {value: claude-opus-5-5, label: "Opus 5.5 — most capable; coding + agentic"}
+      - {value: claude-sonnet-5-5, label: "Sonnet 5.5 — fast and capable for everyday work"}
+      - {value: claude-haiku-5-5, label: "Haiku 5.5 — fastest, lowest cost"}
   - name: EFFORT
     type: enum
     prompt: "Effort level"
     default: medium
-    description: "Controls thinking depth and overall token spend. `max` is Opus-only."
+    description: "How much Claude thinks before answering, and overall token spend."
     options:
       - {value: low, label: "low — fast + cheap"}
       - {value: medium, label: "medium — balanced (recommended default)"}
       - {value: high, label: "high — slower, more thorough"}
-      - {value: max, label: "max — Opus-only ceiling"}
+      - {value: xhigh, label: "xhigh — deeper still; good for coding + agentic work"}
+      - {value: max, label: "max — most thorough, highest cost"}
   - name: REFERENCE_FILE
     type: string
     default: reference.md
