@@ -13,10 +13,9 @@ import os
 import sys
 import time
 import warnings
-from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QCoreApplication
+from PySide6.QtWidgets import QApplication
 
 from alpacka import launch_runner, output_manager, process_tracker
 
@@ -26,7 +25,8 @@ CTRL_BREAK_EXIT = 0xC000013A
 
 @pytest.fixture(scope="module")
 def qapp():
-    return QCoreApplication.instance() or QCoreApplication([])
+    # A full QApplication: other test modules build widgets in the same process.
+    return QApplication.instance() or QApplication([])
 
 
 @pytest.mark.parametrize(
