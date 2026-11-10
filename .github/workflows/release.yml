@@ -15,7 +15,7 @@ name: Release
 #   Windows: ALPACKA-<version>-windows-x64-setup.exe   (Inno Setup, primary)
 #            ALPACKA-<version>-windows-x64-portable.zip (portable fallback)
 #            SHA256SUMS-windows.txt
-#   macOS:   ALPACKA-<version>-macos.dmg                (drag-to-Applications)
+#   macOS:   ALPACKA-<version>-macos-arm64.dmg          (Apple silicon, drag-to-Applications)
 #            SHA256SUMS-macos.txt
 #
 # None of the artifacts are code-signed yet. Users see SmartScreen /
@@ -125,7 +125,8 @@ jobs:
             $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $f).Hash.ToLower()
             "$hash  $(Split-Path -Leaf $f)"
           }
-          $lines | Set-Content -Encoding ascii SHA256SUMS-windows.txt
+          # LF line endings, so `sha256sum -c` works on macOS and Linux too.
+          Set-Content -NoNewline -Encoding ascii -Path SHA256SUMS-windows.txt -Value (($lines -join "`n") + "`n")
           Get-Content SHA256SUMS-windows.txt
 
       # --- macOS packaging -------------------------------------------------
@@ -147,7 +148,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.v }}
         run: |
-          shasum -a 256 "ALPACKA-${VERSION}-macos.dmg" > SHA256SUMS-macos.txt
+          shasum -a 256 "ALPACKA-${VERSION}-macos-arm64.dmg" > SHA256SUMS-macos.txt
           cat SHA256SUMS-macos.txt
 
       # --- Release upload ---------------------------------------------------
@@ -174,7 +175,7 @@ jobs:
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
         with:
           files: |
-            ALPACKA-${{ steps.version.outputs.v }}-macos.dmg
+            ALPACKA-${{ steps.version.outputs.v }}-macos-arm64.dmg
             SHA256SUMS-macos.txt
           fail_on_unmatched_files: true
           generate_release_notes: false

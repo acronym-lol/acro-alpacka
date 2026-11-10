@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Package dist/ALPACKA.app as ALPACKA-<version>-macos.dmg, then check that
-# the app inside the finished image still has a valid signature.
+# Package dist/ALPACKA.app as ALPACKA-<version>-macos-arm64.dmg, then check
+# that the app inside the finished image still has a valid signature.
 #
 # Usage: bash installer/make_dmg.sh <version>
 # Run after `python build.py`. Needs create-dmg (brew install create-dmg).
@@ -10,8 +10,15 @@
 set -euo pipefail
 
 version="${1:?usage: make_dmg.sh <version>}"
-dmg="ALPACKA-${version}-macos.dmg"
+dmg="ALPACKA-${version}-macos-arm64.dmg"
 app="dist/ALPACKA.app"
+
+# The app is built for the runner's CPU, and the DMG's name says arm64
+# (Apple silicon). Building on anything else would ship a mislabeled file.
+if [ "$(uname -m)" != "arm64" ]; then
+  echo "::error::Built on $(uname -m), but the DMG is named for arm64; update the name in installer/make_dmg.sh and release.yml" >&2
+  exit 1
+fi
 
 if [ ! -d "$app" ]; then
   echo "::error::$app not found; run python build.py first" >&2
