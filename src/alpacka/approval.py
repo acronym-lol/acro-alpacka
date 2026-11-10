@@ -171,6 +171,25 @@ def grandfather_existing() -> None:
 # ---------------------------------------------------------------------------
 
 
+def _env_lines(cfg: dict, prefix: str) -> list[str]:
+    """`<prefix>KEY=value` for each entry in a run config's `env` map."""
+    env = cfg.get("env")
+    if not isinstance(env, dict):
+        return []
+    return [f"{prefix}{key}={value}" for key, value in env.items()]
+
+
+def _default_run_config(proj: project.Project) -> dict:
+    """The run config a TD launch uses: unnamed or named "default".
+
+    Same rule as `launch._resolve_run_config` with no name.
+    """
+    for cfg in proj.run_configs or []:
+        if isinstance(cfg, dict) and cfg.get("name") in (None, "", "default"):
+            return cfg
+    return {}
+
+
 def describe(proj: project.Project) -> str:
     """Plain-text list of everything this project would make ALPACKA run."""
     lines: list[str] = []
@@ -188,6 +207,7 @@ def describe(proj: project.Project) -> str:
         for key in _TD_LAUNCH_PATHS:
             if settings.get(key):
                 lines.append(f"  • {key.replace('_', ' ').capitalize()} program: {settings[key]}")
+        lines.extend(_env_lines(_default_run_config(proj), "  • Sets "))
     else:
         configs = proj.run_configs or []
         if not configs:
@@ -210,6 +230,7 @@ def describe(proj: project.Project) -> str:
                 extras.append(f"in {cfg['cwd']}")
             suffix = f" ({', '.join(extras)})" if extras else ""
             lines.append(f"  • {cfg.get('name') or 'default'}: {cmd}{suffix}")
+            lines.extend(_env_lines(cfg, "      sets "))
         settings = proj.kind_data.get(proj.kind) or {}
         for key, value in settings.items():
             lines.append(f"  • {key}: {value}")

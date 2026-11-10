@@ -236,7 +236,11 @@ def _spawn(
 
     handler = kinds.get(proj.kind)
     if run_config is None:
-        run_config = handler.default_run_config(proj)
+        # TD launches (and anything else that names no run config) use the
+        # alpacka.yml run config with no name or named "default" when there
+        # is one, so its `env` and `variables` apply; otherwise the kind's
+        # default.
+        run_config = _resolve_run_config(proj, None)
 
     merged_vars = dict(proj.variables)
     merged_vars.update(run_config.variables)
@@ -252,10 +256,7 @@ def _spawn(
         extras["artifact"] = toe_path
 
     spec = handler.build_launch(proj, run_config, merged_vars, **extras)
-
-    env = dict(os.environ)
-    for k, v in spec.env.items():
-        env[str(k)] = str(v)
+    env = _launch_env(spec, run_config)
 
     # Resolve the project's effective output mode, then dispatch to the
     # matching runner. TD projects always go through `silent` — the TD
@@ -333,6 +334,22 @@ def _spawn(
         pass
 
     return proc
+
+
+def _launch_env(spec: kinds.LaunchSpec, run_config: kinds.RunConfig) -> dict[str, str]:
+    """The environment the spawned process gets.
+
+    Layers, lowest first: ALPACKA's own environment; what the kind handler
+    built (project + run-config `variables`, and kind settings such as
+    TD's `launch_settings`); then the run config's `env` map, the most
+    explicit override, for every kind (docs/configuration.md).
+    """
+    env = dict(os.environ)
+    for k, v in spec.env.items():
+        env[str(k)] = str(v)
+    for k, v in run_config.env.items():
+        env[str(k)] = str(v)
+    return env
 
 
 def _sync_td_prefs(install: TDInstall) -> None:
