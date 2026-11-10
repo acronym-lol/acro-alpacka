@@ -40,7 +40,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .. import output_manager
+from .. import output_manager, process_tracker
 from . import frameless
 
 
@@ -168,7 +168,7 @@ class OutputView(frameless.FramelessDialog):
         if status == "running":
             self._status_pill.setText("Running")
         elif status == "exited":
-            self._status_pill.setText(f"Exited ({exit_code})")
+            self._status_pill.setText(f"Exited ({process_tracker.format_exit_code(exit_code)})")
         else:
             self._status_pill.setText("Idle")
         self._status_pill.setProperty("status", status or "idle")

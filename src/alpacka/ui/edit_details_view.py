@@ -1609,7 +1609,7 @@ def _dep_status_text_and_state(
         code = record.exit_code if record.exit_code is not None else 0
         if code == 0:
             return ("✓ done", "done")
-        return (f"✗ exit {code}", "error")
+        return (f"✗ exit {process_tracker.format_exit_code(code)}", "error")
     return (f"● running {record.pid}", "running")
 
 
