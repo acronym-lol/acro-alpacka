@@ -8,7 +8,7 @@ version = "0.0.1"
 description = "Claude API service."
 requires-python = ">=3.11"
 dependencies = [
-    "anthropic>=0.92",
+    "anthropic>=2.8",
     "python-dotenv>=1.0",
 ]
 

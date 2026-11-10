@@ -6,9 +6,12 @@ Demonstrates the patterns you'll likely want for a real Claude app:
     rolling conversation tail. Prints cache hit stats per turn so you
     can watch caching pay off.
   - **Adaptive thinking** with the `effort` parameter — Claude decides
-    depth per request. Toggle off for latency-sensitive flows.
+    how much to think per request; lower `EFFORT` for faster replies.
   - **Multi-turn conversation** kept in a Python list (Anthropic's API
-    is stateless — you send the full history every turn).
+    is stateless — you send the full history every turn). Each reply is
+    sent back exactly as it came, thinking blocks included.
+  - **Refusal fallbacks** — if the model's safety classifiers decline a
+    request, the API re-runs it on a fallback model in the same call.
   - **`stop_reason` handling** — refusal, max_tokens, end_turn.
 
 Run via `python main.py` (or click Launch in ALPACKA). Env vars
@@ -16,9 +19,9 @@ Run via `python main.py` (or click Launch in ALPACKA). Env vars
 section at launch time):
 
   ANTHROPIC_API_KEY      — your key (required)
-  ANTHROPIC_MODEL        — claude-sonnet-4-6 (default), opus-4-7, haiku-4-5
-  USE_ADAPTIVE_THINKING  — true / false
-  EFFORT                 — low | medium | high | max  (max = Opus only)
+  ANTHROPIC_MODEL        — claude-opus-5-5 (default), claude-sonnet-5-5,
+                           claude-haiku-5-5
+  EFFORT                 — low | medium | high | xhigh | max
   REFERENCE_FILE         — path to a markdown/text file (default reference.md)
 """
 from __future__ import annotations
@@ -36,16 +39,19 @@ load_dotenv()
 # Config
 # ---------------------------------------------------------------------------
 
-MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
-USE_THINKING = os.environ.get("USE_ADAPTIVE_THINKING", "true").lower() in (
-    "1", "true", "yes", "on",
-)
+MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-5-5")
 EFFORT = os.environ.get("EFFORT", "medium")
 REFERENCE_FILE = os.environ.get("REFERENCE_FILE", "reference.md")
 
-# Sonnet/Haiku cap at 64K output, Opus at 128K. 8K is plenty for chat replies
-# and keeps responses snappy.
-MAX_OUTPUT_TOKENS = 8000
+# Thinking counts toward max_tokens, so leave room for it. 16K keeps a
+# non-streaming request well inside the SDK's HTTP timeout; stream (see the
+# bottom of this file) if you need more.
+MAX_OUTPUT_TOKENS = 16000
+
+# `fallbacks: "default"` lets the API pick the fallback model by refusal
+# category. It needs this beta header and the beta messages endpoint.
+# Haiku has no fallback model: a declined request simply stays declined.
+FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
 
 # ---------------------------------------------------------------------------
@@ -68,7 +74,10 @@ def build_system(reference: str) -> list[dict]:
 
     Caching the system prompt means the doc only counts as full-price
     input tokens on the FIRST request. Every subsequent turn within the
-    cache TTL (5 min) costs ~0.1x for that block.
+    cache TTL (5 min) pays a small fraction of that (5–10%, depending on
+    the model) for that block. Keep it frozen for the
+    whole conversation: changing it mid-conversation resets the cache and
+    invalidates earlier thinking blocks.
     """
     text = (
         "You are a helpful assistant that answers questions about the "
@@ -82,6 +91,27 @@ def build_system(reference: str) -> list[dict]:
             "text": text,
             "cache_control": {"type": "ephemeral"},
         }
+    ]
+
+
+def reply_to_keep(content: list) -> list:
+    """The assistant turn to send back next time.
+
+    Normally that's the reply exactly as it came, thinking blocks
+    included: the API checks that earlier turns are unchanged, and editing
+    them (stripping a thinking block from the middle, say) invalidates the
+    thinking blocks after it. The one exception is a reply where a
+    fallback model took over: before the last `fallback` marker, only text
+    goes back, and the marker itself is dropped.
+    """
+    last_fallback = max(
+        (i for i, block in enumerate(content) if block.type == "fallback"),
+        default=-1,
+    )
+    return [
+        block
+        for i, block in enumerate(content)
+        if i > last_fallback or block.type == "text"
     ]
 
 
@@ -105,7 +135,7 @@ def run() -> None:
 
     print(f"Model: {MODEL}")
     print(f"Reference: {REFERENCE_FILE} ({len(reference):,} chars)")
-    print(f"Adaptive thinking: {USE_THINKING}, effort: {EFFORT}")
+    print(f"Effort: {EFFORT}")
     print(f"Type your question and press Enter. Empty line or 'quit' to exit.\n")
 
     while True:
@@ -129,15 +159,16 @@ def run() -> None:
             "system": system,
             "messages": conversation,
             "cache_control": {"type": "ephemeral"},
+            # Thinking can't be switched off on the current models; lower
+            # the effort instead when you want faster, cheaper replies.
+            "thinking": {"type": "adaptive"},
+            "output_config": {"effort": EFFORT},
+            "fallbacks": "default",
+            "betas": [FALLBACK_BETA],
         }
-        if USE_THINKING:
-            request["thinking"] = {"type": "adaptive"}
-            request["output_config"] = {"effort": EFFORT}
-        else:
-            request["thinking"] = {"type": "disabled"}
 
         try:
-            response = client.messages.create(**request)
+            response = client.beta.messages.create(**request)
         except anthropic.RateLimitError as exc:
             retry_after = exc.response.headers.get("retry-after", "60")
             print(f"[rate-limited; retry after {retry_after}s]\n")
@@ -150,9 +181,11 @@ def run() -> None:
 
         # stop_reason values: end_turn, max_tokens, stop_sequence, tool_use,
         # pause_turn, refusal. We don't use tools here; refusal + max_tokens
-        # are the ones to surface.
+        # are the ones to surface. With fallbacks on, a refusal means the
+        # fallback model declined too.
         if response.stop_reason == "refusal":
-            print("Claude: [declined to answer for safety reasons]\n")
+            category = response.stop_details.category if response.stop_details else None
+            print(f"Claude: [declined to answer (category: {category})]\n")
             conversation.pop()
             continue
         if response.stop_reason == "max_tokens":
@@ -161,10 +194,12 @@ def run() -> None:
                 f"if you need a longer reply]"
             )
 
-        text = "".join(b.text for b in response.content if b.type == "text")
-        conversation.append({"role": "assistant", "content": text})
+        conversation.append({"role": "assistant", "content": reply_to_keep(response.content)})
 
+        text = "".join(b.text for b in response.content if b.type == "text")
         print(f"\nClaude: {text}\n")
+        if response.model != MODEL:
+            print(f"  [answered by the fallback model {response.model}]")
 
         u = response.usage
         print(
@@ -179,11 +214,11 @@ if __name__ == "__main__":
 
 
 # ---------------------------------------------------------------------------
-# Streaming variant — uncomment if your replies routinely exceed ~16K tokens
+# Streaming variant — use it if your replies routinely exceed ~16K tokens
 # (non-streaming hits SDK HTTP timeouts above that). Otherwise non-streaming
 # is simpler.
 #
-#     with client.messages.stream(**request) as stream:
+#     with client.beta.messages.stream(**request) as stream:
 #         for text in stream.text_stream:
 #             print(text, end="", flush=True)
 #         response = stream.get_final_message()
