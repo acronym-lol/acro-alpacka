@@ -170,6 +170,23 @@ def mark_completed(pid: int, exit_code: int | None) -> None:
         )
 
 
+def format_exit_code(code: int | None) -> str:
+    """An exit code the way people look it up: Windows status codes in hex.
+
+    Windows exit codes are unsigned 32-bit. The ones Windows sets itself
+    are 0x80000000 and up (0xC0000005 an access violation, 0xC000013A
+    stopped with Ctrl+C / Ctrl+Break) and are known by their hex form.
+    Everything else, including POSIX's negative "killed by signal" codes,
+    is shown as is.
+    """
+    if code is None:
+        return "?"
+    code = int(code)
+    if code >= 0x80000000:
+        return f"0x{code:08X}"
+    return str(code)
+
+
 def _row_to_record(row) -> ProcessRecord:
     return ProcessRecord(
         id=row["id"],
