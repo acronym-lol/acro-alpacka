@@ -20,7 +20,7 @@ Grab the latest release from **[github.com/acronym-lol/acro-alpacka/releases/lat
 
 - **Windows (most users)** — `ALPACKA-<version>-windows-x64-setup.exe`. Runs a per-user install, adds a Start Menu entry, and registers an uninstaller in Add/Remove Programs.
 - **Windows (portable)** — `ALPACKA-<version>-windows-x64-portable.zip`. Extract anywhere, run `ALPACKA.exe`. No install, no registry entries.
-- **macOS** — `ALPACKA-<version>-macos.dmg`. Mount it, drag `ALPACKA.app` into the Applications alias.
+- **macOS** — `ALPACKA-<version>-macos-arm64.dmg`, for Apple silicon Macs (M1 or later). Mount it, drag `ALPACKA.app` into the Applications alias.
 
 Config lands in the per-user location by default — see [Configuration](configuration.md) for paths.
 
@@ -29,7 +29,10 @@ Config lands in the per-user location by default — see [Configuration](configu
 ALPACKA isn't code-signed yet (paid certs aren't in scope for v1). Both OSes show a one-time security prompt on first launch:
 
 - **Windows**: "Windows protected your PC" (SmartScreen). Click **More info** → **Run anyway**.
-- **macOS**: double-clicking `ALPACKA.app` the first time fails silently or shows a "can't be opened" dialog. **Right-click** (or `Ctrl`-click) the app → **Open** → **Open**. Second launch onwards is normal.
+- **macOS 15 or later**: the first time you open `ALPACKA.app`, macOS says it could not verify it. Click **Done**, then go to **System Settings → Privacy & Security** and click **Open Anyway** next to the ALPACKA message.
+- **Older macOS**: **Right-click** (or `Ctrl`-click) the app → **Open** → **Open**.
+
+Second launch onwards is normal.
 
 ### Portable mode
 
