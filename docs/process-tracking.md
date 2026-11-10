@@ -72,14 +72,16 @@ One-shot rows with `completed_at` set are **not** removed on sweep — they stay
 
 `crash_monitor.tick(dead, alive)` runs once per 6-second sweep cycle (called from `library_view._poll_running_processes`). It does two passes:
 
-1. **Crashed processes** — for each dead record, decide whether to:
+1. **Ended processes** — the dead records from the sweep, plus one-shot main runs whose watcher has just marked them completed (the sweep skips completed rows, so these would otherwise never reach the monitor; each finish is handled once). For each, decide whether to:
    - Skip (user-initiated stop, suppression flag was set by `_on_stop`).
    - Skip (the dead record is itself a `dependency` — a dep dying isn't a project crash).
    - Tear down companion deps via `_terminate_dependents(project_id)`. Persistent deps without `keep_alive_after_main` get `terminate_process`'d so they don't pile up across crashes; flagged deps stay running.
    - Optionally schedule a relaunch via `_schedule_relaunch(record)` if the project has `launch_on_startup AND reopen_on_crash` set.
 2. **Hang detection** (Windows only, via `IsHungAppWindow`) — for each alive record, track unresponsive top-level windows; after `freeze_timeout_seconds` past the `startup_grace_seconds` window, force-terminate and treat the kill as a crash.
 
-`_do_relaunch` re-enters the same `launch.launch_toe(entry, toe_filename)` pipeline a manual launch uses — so deps spawn fresh through `_spawn_launch_dependencies`. The race-guard at the top of `_do_relaunch` only checks for a still-running **main** process; surviving `keep_alive` deps don't block a relaunch.
+`_do_relaunch` re-enters the same pipeline a manual launch uses — `launch.launch_toe(entry, toe_filename)` for the TouchDesigner file that ended, `launch.launch(entry, run_config_name=…)` with the run config that ended for every other kind — so deps spawn fresh through `_spawn_launch_dependencies`. The race-guard at the top of `_do_relaunch` only checks for a still-running **main** process with the same target (`.toe` or run config): another run config of the same project still running, or surviving `keep_alive` deps, don't block a relaunch.
+
+When Auto Relaunch is on, a console-mode launch doesn't wait for a key after an error: the console wrapper is the tracked PID, so a window waiting for a key would hide the crash until someone dismissed it.
 
 ## Auto-launch on startup
 

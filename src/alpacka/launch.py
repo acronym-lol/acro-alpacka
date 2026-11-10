@@ -266,7 +266,13 @@ def _spawn(
     else:
         output_mode = proj.effective_output_mode(handler) or "none"
 
-    proc, output_mode = _dispatch_runner(spec, env, output_mode)
+    # A console window normally waits for a key after an error so the
+    # output stays readable. With Auto Relaunch on, nobody may be there to
+    # press it, and the waiting window would hide the crash.
+    relaunches = bool(proj.launch_on_startup and proj.reopen_on_crash)
+    proc, output_mode = _dispatch_runner(
+        spec, env, output_mode, pause_on_error=not relaunches
+    )
 
     # Register the spawned PID so the library view can surface running
     # state and later focus / terminate the process. Defensive — DB failure
@@ -498,6 +504,8 @@ def _dispatch_runner(
     spec: kinds.LaunchSpec,
     env: dict[str, str],
     output_mode: str,
+    *,
+    pause_on_error: bool = True,
 ) -> tuple[subprocess.Popen, str]:
     """Pick a runner based on `output_mode`; return (proc, effective_mode).
 
@@ -505,11 +513,16 @@ def _dispatch_runner(
     terminal (currently only fires on Linux when the fallback chain
     yields nothing). The effective mode is returned so the caller
     persists what actually happened, not what was requested.
+    `pause_on_error` only affects console mode.
     """
     if output_mode == "console":
         try:
             proc = launch_runner.run_console(
-                spec.argv, cwd=spec.cwd, env=env, shell=spec.shell
+                spec.argv,
+                cwd=spec.cwd,
+                env=env,
+                shell=spec.shell,
+                pause_on_error=pause_on_error,
             )
             return proc, "console"
         except launch_runner.ConsoleUnavailableError:

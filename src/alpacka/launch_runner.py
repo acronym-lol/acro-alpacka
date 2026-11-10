@@ -165,18 +165,29 @@ def run_console(
     cwd: Path,
     env: dict[str, str],
     shell: bool,
+    pause_on_error: bool = True,
 ) -> subprocess.Popen:
     """Launch the command inside a fresh OS terminal window.
 
-    The wrapper pauses on non-zero exit so a crashing process leaves its
-    error output visible. The PID returned belongs to the wrapper, not
-    the inner command — see module docstring for the lifecycle contract.
+    By default the wrapper pauses on non-zero exit so a crashing process
+    leaves its error output visible. Pass ``pause_on_error=False`` when
+    nobody may be there to press a key — a project with Auto Relaunch on —
+    because the wrapper's PID is what ALPACKA tracks, so a paused window
+    hides the crash until someone dismisses it. The PID returned belongs
+    to the wrapper, not the inner command — see module docstring for the
+    lifecycle contract.
     """
     if sys.platform == "win32":
-        return _run_console_windows(argv, cwd=cwd, env=env, shell=shell)
+        return _run_console_windows(
+            argv, cwd=cwd, env=env, shell=shell, pause_on_error=pause_on_error
+        )
     if sys.platform == "darwin":
-        return _run_console_macos(argv, cwd=cwd, env=env, shell=shell)
-    return _run_console_linux(argv, cwd=cwd, env=env, shell=shell)
+        return _run_console_macos(
+            argv, cwd=cwd, env=env, shell=shell, pause_on_error=pause_on_error
+        )
+    return _run_console_linux(
+        argv, cwd=cwd, env=env, shell=shell, pause_on_error=pause_on_error
+    )
 
 
 # --- Windows ---------------------------------------------------------------
@@ -188,6 +199,7 @@ def _run_console_windows(
     cwd: Path,
     env: dict[str, str],
     shell: bool,
+    pause_on_error: bool = True,
 ) -> subprocess.Popen:
     """Open a new console and run ``argv`` inside it, pausing on error.
 
@@ -218,7 +230,8 @@ def _run_console_windows(
     # outermost-quote stripping. Inner quotes around the executable
     # path survive, so cmd locates `python.exe` correctly even when
     # the project path contains spaces.
-    cmd_line = f'cmd /s /c "{inner} & if errorlevel 1 pause"'
+    tail = " & if errorlevel 1 pause" if pause_on_error else ""
+    cmd_line = f'cmd /s /c "{inner}{tail}"'
     return subprocess.Popen(
         cmd_line,
         cwd=str(cwd),
@@ -274,6 +287,7 @@ def _run_console_macos(
     cwd: Path,
     env: dict[str, str],
     shell: bool,
+    pause_on_error: bool = True,
 ) -> "subprocess.Popen | _AdoptedProcess":
     """Open the command in Terminal.app via a temp `.command` script.
 
@@ -300,6 +314,13 @@ def _run_console_macos(
     # closes its Terminal tab without prompting. The script deletes itself
     # as soon as bash has opened it: it holds the environment (which can
     # include secrets from alpacka.local.yml), so it mustn't linger in /tmp.
+    pause = (
+        "rc=$?\n"
+        "if [ $rc -ne 0 ]; then\n"
+        '  echo ""\n'
+        '  read -n 1 -r -p "exit $rc — press any key to close..."\n'
+        "fi\n"
+    ) if pause_on_error else ""
     script = (
         "#!/bin/bash\n"
         'rm -f -- "$0"\n'
@@ -307,11 +328,7 @@ def _run_console_macos(
         f"cd {shlex.quote(str(cwd))}\n"
         f"{env_export}\n"
         f"{inner}\n"
-        "rc=$?\n"
-        "if [ $rc -ne 0 ]; then\n"
-        '  echo ""\n'
-        '  read -n 1 -r -p "exit $rc — press any key to close..."\n'
-        "fi\n"
+        f"{pause}"
     )
     script_path = _write_temp_script(script, suffix=".command")
 
@@ -367,6 +384,7 @@ def _run_console_linux(
     cwd: Path,
     env: dict[str, str],
     shell: bool,
+    pause_on_error: bool = True,
 ) -> subprocess.Popen:
     """Locate a terminal emulator and run the command inside it.
 
@@ -381,15 +399,15 @@ def _run_console_linux(
         )
 
     inner = _shell_inner_string_posix(argv, shell=shell)
-    bash_command = (
-        f"cd {shlex.quote(str(cwd))} && "
-        f"{inner}; "
-        "rc=$?; "
-        'if [ $rc -ne 0 ]; then '
-        '  echo; '
-        '  read -n 1 -r -p "exit $rc — press any key to close..."; '
-        "fi"
-    )
+    bash_command = f"cd {shlex.quote(str(cwd))} && {inner}"
+    if pause_on_error:
+        bash_command += (
+            "; rc=$?; "
+            'if [ $rc -ne 0 ]; then '
+            '  echo; '
+            '  read -n 1 -r -p "exit $rc — press any key to close..."; '
+            "fi"
+        )
 
     # `--` separator is the most consistent across emulators; `-e` is
     # deprecated in gnome-terminal 3.x and quoting differs per impl.
