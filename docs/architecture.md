@@ -36,10 +36,11 @@ acro-alpacka/
 │   ├── td_install.py            # detect installed TD versions per platform
 │   ├── td_prefs.py              # managed keys in TD's machine-wide pref.txt (merge, drift, revert)
 │   ├── td_download.py           # download + run the Derivative installer
+│   ├── downloads.py             # HTTPS download with progress, cancel and hashing
 │   ├── toe_inspect.py           # extract version from a .toe via `toeexpand -b`
 │   ├── process_tracker.py       # PID persistence, kind-dispatched liveness/focus/terminate
 │   ├── external.py              # open folder / VS Code / terminal / browser helpers
-│   ├── updater.py               # check for newer ALPACKA release (GitHub API)
+│   ├── updater.py               # check for a newer release; download + start the Windows setup
 │   ├── kinds/                   # one handler per project kind
 │   │   ├── base.py              # KindHandler protocol + shared default_liveness/_terminate/_focus
 │   │   ├── touchdesigner.py     # TD: TOUCH_* env, AppleScript focus, name="touchdesigner"
@@ -66,6 +67,7 @@ acro-alpacka/
 │   │   ├── output_view.py       # modeless dialog reading per-project ring buffer
 │   │   ├── autostart_settings_dialog.py
 │   │   ├── td_install_dialog.py # version-mismatch + install-progress dialogs
+│   │   ├── update_dialog.py     # Update and restart: download progress, then quit for the setup
 │   │   ├── toe_picker_dialog.py
 │   │   ├── tag_picker_dialog.py
 │   │   ├── tag_edit_dialog.py

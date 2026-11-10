@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from .. import td_download, td_install
+from ..downloads import human_bytes
 from ..settings import TDInstall
 from . import frameless
 from .frameless import FramelessDialog
@@ -193,12 +194,12 @@ class InstallProgressDialog(FramelessDialog):
             self.progress_bar.setRange(0, 100)
             self.progress_bar.setValue(pct)
             self.status_label.setText(
-                f"Downloading... {_human_bytes(downloaded)} / {_human_bytes(total)}"
+                f"Downloading... {human_bytes(downloaded)} / {human_bytes(total)}"
             )
         else:
             self.progress_bar.setRange(0, 0)  # indeterminate
             self.status_label.setText(
-                f"Downloading... {_human_bytes(downloaded)}"
+                f"Downloading... {human_bytes(downloaded)}"
             )
 
     def _on_status(self, text: str) -> None:
@@ -270,11 +271,3 @@ class InstallProgressDialog(FramelessDialog):
         if self._thread.isRunning():
             self._thread.quit()
             self._thread.wait(3000)
-
-
-def _human_bytes(n: int) -> str:
-    for unit in ("B", "KB", "MB", "GB"):
-        if n < 1024:
-            return f"{n:.1f} {unit}"
-        n /= 1024
-    return f"{n:.1f} TB"

@@ -34,6 +34,20 @@ ALPACKA isn't code-signed yet (paid certs aren't in scope for v1). Both OSes sho
 
 Second launch onwards is normal.
 
+### Updating
+
+ALPACKA checks for a new release once a day. **Settings → Application Updates** turns this off, and **Check for Updates Now** checks straight away.
+
+**Windows, installed with the setup:** choose **Update and restart**. ALPACKA downloads the new setup, checks it against the checksum published with the release, then closes. The setup installs the update and opens ALPACKA again. Your settings, library and projects stay as they are.
+
+- **Projects running in their own window keep running:** TouchDesigner, console and silent output.
+- **Projects whose output shows inside ALPACKA (inline) stop** when ALPACKA closes. ALPACKA lists them and asks first. Projects set to start automatically start again when it reopens.
+- **If anything goes wrong before ALPACKA closes,** nothing changes and ALPACKA offers the release page instead. If the install itself fails, the next start says so and shows where the setup's log is.
+
+**Portable zip and macOS:** **Download** opens the release page. Download the new version and replace the old one.
+
+The first version with **Update and restart** is 0.9.2, so updating from 0.9.1 or earlier is still done by hand once.
+
 ### Portable mode
 
 Drop an empty file named `portable.txt` next to the `ALPACKA` executable. Config + DB then live in `./data/` alongside the exe, so the whole install travels on a USB stick. Works with either the installer-based install or the portable zip.

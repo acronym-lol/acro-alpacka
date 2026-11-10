@@ -19,13 +19,13 @@ def _exe_dir() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def _is_portable() -> bool:
+def is_portable() -> bool:
     return (_exe_dir() / "portable.txt").exists()
 
 
 def config_root() -> Path:
     """Root directory for launcher-owned state (DB, settings, caches)."""
-    if _is_portable():
+    if is_portable():
         return _exe_dir() / "data"
 
     if sys.platform == "win32":
@@ -42,7 +42,7 @@ def config_root() -> Path:
 
 def cache_root() -> Path:
     """Root directory for transient caches (downloads, thumbnails)."""
-    if _is_portable():
+    if is_portable():
         return _exe_dir() / "data" / "cache"
 
     if sys.platform == "win32":
