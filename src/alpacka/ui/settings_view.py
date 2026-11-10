@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
 )
 
 from .. import __version__, external, process_tracker, settings, td_install, td_prefs, updater
-from . import frameless
+from . import frameless, update_dialog
 from .frameless import FramelessDialog
 from .td_prefs_dialog import TDPrefsTable
 
@@ -220,8 +220,18 @@ class SettingsView(QWidget):
         self._check_updates_btn.clicked.connect(self._on_check_updates_now)
         update_row.addWidget(self._check_updates_btn)
 
+        # The installed Windows build updates itself; everything else
+        # (portable, macOS, source) downloads from the release page.
+        self._can_install_update = updater.can_install_in_place()
+        self._install_update_btn = QPushButton("Update and Restart")
+        self._install_update_btn.setObjectName("primaryButton")
+        self._install_update_btn.clicked.connect(self._on_install_update)
+        self._install_update_btn.setVisible(False)
+        update_row.addWidget(self._install_update_btn)
+
         self._open_release_btn = QPushButton("Open Release Page")
-        self._open_release_btn.setObjectName("primaryButton")
+        if not self._can_install_update:
+            self._open_release_btn.setObjectName("primaryButton")
         self._open_release_btn.clicked.connect(self._on_open_release_page)
         self._open_release_btn.setVisible(False)
         update_row.addWidget(self._open_release_btn)
@@ -408,21 +418,21 @@ class SettingsView(QWidget):
         user-driven state change (manual check, auto-check toggle, clear
         skipped version).
         """
+        available = not self._check_in_progress and self._latest_update is not None
         if self._check_in_progress:
             self._update_status_label.setText("Checking…")
-            self._open_release_btn.setVisible(False)
         elif self._latest_update is not None:
             self._update_status_label.setText(
                 f"ALPACKA {self._latest_update.version} is available "
                 f"(you're on {__version__})."
             )
-            self._open_release_btn.setVisible(True)
         else:
             last = self._format_last_check(self._settings.last_update_check)
             self._update_status_label.setText(
                 f"You're on ALPACKA {__version__} — up to date.  Last checked: {last}."
             )
-            self._open_release_btn.setVisible(False)
+        self._open_release_btn.setVisible(available)
+        self._install_update_btn.setVisible(available and self._can_install_update)
 
         self._auto_check_cb.setChecked(self._settings.auto_update_check)
 
@@ -456,10 +466,20 @@ class SettingsView(QWidget):
         settings.save(self._settings)
         self.refresh_updates_status()
 
+    def set_latest_update(self, info: "updater.UpdateInfo | None") -> None:
+        """Show the result of the startup check here too."""
+        self._latest_update = info
+        self.refresh_updates_status()
+
     def _on_open_release_page(self) -> None:
         if self._latest_update is None:
             return
         QDesktopServices.openUrl(QUrl(updater.safe_release_url(self._latest_update.release_page)))
+
+    def _on_install_update(self) -> None:
+        if self._latest_update is None:
+            return
+        update_dialog.run_update(self.window(), self._latest_update)
 
     def _on_auto_check_toggled(self, checked: bool) -> None:
         self._settings.auto_update_check = checked

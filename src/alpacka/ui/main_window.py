@@ -57,7 +57,7 @@ class _VisibleSizeGrip(QSizeGrip):
         painter.end()
 
 from .. import __version__, approval, library, process_tracker, settings, td_install, td_prefs, updater
-from . import frameless
+from . import frameless, update_dialog
 from .add_existing_dialog import AddExistingDialog
 from .edit_details_view import EditDetailsView
 from .library_view import LibraryView
@@ -560,6 +560,10 @@ class MainWindow(QMainWindow):
 
     def _run_startup_prompts(self) -> None:
         try:
+            self._report_last_update()
+        except Exception:  # noqa: BLE001 — a status message must never block startup
+            pass
+        try:
             self._maybe_prompt_td_prefs()
         except Exception:  # noqa: BLE001 — a prompt failure must not cost the update check
             pass
@@ -651,7 +655,7 @@ class MainWindow(QMainWindow):
         the user hasn't explicitly skipped it, show the update prompt."""
         self.settings.last_update_check = time.time()
         settings.save(self.settings)
-        self.settings_view.refresh_updates_status()
+        self.settings_view.set_latest_update(info)
         if info is None:
             return
         if info.version == self.settings.skipped_version:
@@ -659,6 +663,9 @@ class MainWindow(QMainWindow):
         self._prompt_update(info)
 
     def _prompt_update(self, info: "updater.UpdateInfo") -> None:
+        if updater.can_install_in_place():
+            self._prompt_install_update(info)
+            return
         message = (
             f"ALPACKA {info.version} is available (you're on {__version__}).\n\n"
             "Open the release page to download the installer?"
@@ -673,11 +680,53 @@ class MainWindow(QMainWindow):
         if choice == 0:
             QDesktopServices.openUrl(QUrl(updater.safe_release_url(info.release_page)))
         elif choice == 2:
-            self.settings.skipped_version = info.version
-            settings.save(self.settings)
-            self.settings_view.refresh_updates_status()
+            self._skip_version(info)
         # choice == 1 (Remind me later) or -1 (dialog closed): no-op — the
         # 24h throttle re-prompts tomorrow.
+
+    def _prompt_install_update(self, info: "updater.UpdateInfo") -> None:
+        """The installed Windows build: offer to update in place."""
+        message = (
+            f"ALPACKA {info.version} is available (you're on {__version__}).\n\n"
+            "ALPACKA will download it, close, install it and open again. "
+            "Projects running in their own windows keep running."
+        )
+        while True:
+            choice = frameless.choose(
+                self,
+                "Update available",
+                message,
+                buttons=["Update and restart", "Release notes", "Remind me later", "Skip this version"],
+                primary_index=0,
+            )
+            if choice != 1:
+                break
+            QDesktopServices.openUrl(QUrl(updater.safe_release_url(info.release_page)))
+        if choice == 0:
+            update_dialog.run_update(self, info)
+        elif choice == 3:
+            self._skip_version(info)
+        # choice == 2 (Remind me later) or -1 (dialog closed): no-op — the
+        # 24h throttle re-prompts tomorrow.
+
+    def _skip_version(self, info: "updater.UpdateInfo") -> None:
+        self.settings.skipped_version = info.version
+        settings.save(self.settings)
+        self.settings_view.refresh_updates_status()
+
+    def _report_last_update(self) -> None:
+        """Say how an update started from ALPACKA went, once, at the next start."""
+        result = updater.take_pending_result()
+        if result is None:
+            return
+        if result.updated:
+            text = f"Updated to ALPACKA {__version__}."
+        else:
+            text = (
+                f"The update to ALPACKA {result.version} didn't finish, so this is "
+                f"still {__version__}. The installer's log is at {result.log}"
+            )
+        self.notice_banner.show_message(text, settings_link=not result.updated)
 
     # --- Frameless-window plumbing -----------------------------------------
 

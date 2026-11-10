@@ -14,28 +14,15 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
-import urllib.request
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from . import paths, td_install
+from . import downloads, paths, td_install
+# Re-exported: callers catch `td_download.DownloadError`.
+from .downloads import DownloadError, DownloadProgress, ProgressCallback
 
 _BASE_URL = "https://download.derivative.ca"
 _TIMEOUT = 30  # seconds without data before a download gives up
-
-
-class DownloadError(RuntimeError):
-    pass
-
-
-@dataclass
-class DownloadProgress:
-    downloaded: int
-    total: int  # 0 if unknown
-
-
-ProgressCallback = Callable[[DownloadProgress], None]
 
 
 def _check_version(version: str) -> str:
@@ -84,34 +71,13 @@ def download(
             return dest
         dest.unlink(missing_ok=True)
 
-    url = installer_url(version)
-    tmp = dest.with_suffix(dest.suffix + ".part")
-    try:
-        with urllib.request.urlopen(url, timeout=_TIMEOUT) as resp:  # noqa: S310
-            if not str(resp.geturl()).startswith("https://"):
-                raise DownloadError(f"Refusing a download redirected to {resp.geturl()}")
-            total = int(resp.headers.get("Content-Length", "0") or 0)
-            downloaded = 0
-            chunk_size = 1024 * 256  # 256 KB
-            with tmp.open("wb") as f:
-                while True:
-                    if should_cancel and should_cancel():
-                        raise DownloadError("Cancelled")
-                    chunk = resp.read(chunk_size)
-                    if not chunk:
-                        break
-                    f.write(chunk)
-                    downloaded += len(chunk)
-                    if on_progress:
-                        on_progress(DownloadProgress(downloaded=downloaded, total=total))
-    except DownloadError:
-        tmp.unlink(missing_ok=True)
-        raise
-    except Exception as exc:  # noqa: BLE001
-        tmp.unlink(missing_ok=True)
-        raise DownloadError(f"Download failed: {exc}") from exc
-
-    tmp.replace(dest)
+    downloads.fetch(
+        installer_url(version),
+        dest,
+        timeout=_TIMEOUT,
+        on_progress=on_progress,
+        should_cancel=should_cancel,
+    )
     status("Checking the installer is signed by Derivative...")
     if not verify_installer(dest):
         dest.unlink(missing_ok=True)

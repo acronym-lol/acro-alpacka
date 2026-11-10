@@ -343,6 +343,13 @@ def notify_exit(row_id: int, code: int) -> None:
         buf.set_exited(int(code))
 
 
+def running_inline_rows() -> list[int]:
+    """Row ids with an inline child still running: they stop when ALPACKA quits."""
+    with _LOCK:
+        items = list(_PROCS.items())
+    return sorted({row_id for (row_id, _pid), proc in items if proc.poll() is None})
+
+
 def shutdown_inline_children() -> None:
     """Terminate every inline child cleanly. Wired to QApplication.aboutToQuit.
 

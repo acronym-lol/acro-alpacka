@@ -54,7 +54,7 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          python -c "import alpacka; from alpacka import app, db, library, settings, paths, updater; from alpacka.ui import main_window, title_bar, frameless, settings_view; assert updater.compare_versions('0.2.0', '0.1.0') == 1; print('alpacka', alpacka.__version__)"
+          python -c "import alpacka; from alpacka import app, db, library, settings, paths, updater; from alpacka.ui import main_window, title_bar, frameless, settings_view, update_dialog; assert updater.compare_versions('0.2.0', '0.1.0') == 1; print('alpacka', alpacka.__version__)"
 
   # release.yml only runs on a tag, so without this job the macOS app is
   # first built on release day and first opened by whoever downloads it.
@@ -102,3 +102,52 @@ jobs:
             echo "::error::ALPACKA exited during startup (exit code $code)"
             exit 1
           fi
+
+  # The Windows installer, built the way release.yml builds it, plus the
+  # silent update that "Update and restart" runs (installer/test_update.ps1):
+  # two installers from one bundle, A then B, checking that B waits for
+  # ALPACKA to quit and opens it again. Runs on a clean runner because it
+  # installs ALPACKA for the current user.
+  build-windows:
+    name: Build Windows installer
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Build
+        run: python build.py
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Build two installers
+        shell: pwsh
+        run: |
+          $v = python -c "import alpacka; print(alpacka.__version__)"
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc "/DMyAppVersion=$v" installer\alpacka.iss
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & $iscc "/DMyAppVersion=$v-ci-update" installer\alpacka.iss
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          "VERSION=$v" >> $env:GITHUB_ENV
+
+      - name: Test the silent update
+        shell: pwsh
+        run: |
+          ./installer/test_update.ps1 `
+            -SetupA "installer\Output\ALPACKA-$env:VERSION-windows-x64-setup.exe" `
+            -VersionA $env:VERSION `
+            -SetupB "installer\Output\ALPACKA-$env:VERSION-ci-update-windows-x64-setup.exe" `
+            -VersionB "$env:VERSION-ci-update"

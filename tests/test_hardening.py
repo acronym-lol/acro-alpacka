@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from alpacka import fsutil, launch_runner, project, td_download, td_install, updater
+from alpacka import downloads, fsutil, launch_runner, project, td_download, td_install, updater
 from alpacka.template_apply import (
     ApplyContext,
     FileEntry,
@@ -80,7 +80,7 @@ def test_unsigned_cached_installer_is_deleted_not_run(tmp_path, monkeypatch):
     def no_network(*a, **k):
         raise OSError("offline")
 
-    monkeypatch.setattr(td_download.urllib.request, "urlopen", no_network)
+    monkeypatch.setattr(downloads.urllib.request, "urlopen", no_network)
     with pytest.raises(td_download.DownloadError):
         td_download.download("2025.32460")
     assert not cached.exists()
