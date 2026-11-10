@@ -87,3 +87,5 @@ The content area doubles as a tag-tree browser. At root, every root-level tag re
 ## Right-click / ⋯ menu
 
 Per card: Edit Details, Pin / Unpin, Remove from Library (never touches the folder on disk), and — when running — Launch new instance. The autostart settings gear (`⚙` next to the kebab) opens a modal for `launch_on_startup`, `reopen_on_crash`, freeze timeout, retry cap, and relaunch delay — all stored on the project's `alpacka.yml`.
+
+**Auto Relaunch on Close** works for every kind of project. Whenever the project's process ends for any reason except **Stop** — a crash, a clean exit, or a run that finishes on its own — ALPACKA starts the same `.toe` or run config again after the relaunch delay, up to the retry cap if one is set. With Auto Relaunch on, a project that uses console output doesn't keep its window open waiting for a key after an error, so the relaunch isn't held up.

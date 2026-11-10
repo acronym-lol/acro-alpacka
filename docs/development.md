@@ -51,6 +51,21 @@ The spec uses `--onedir --windowed` so the build is a folder containing `ALPACKA
 
 On macOS, PyInstaller signs `ALPACKA.app` at the end of its build. Anything added to the bundle afterwards breaks that signature, and macOS then says a downloaded copy is damaged and won't open it. So `build.py` signs the app again (ad hoc) after copying in the licence files, then checks it with `codesign --verify --deep --strict` and fails if the check doesn't pass. `installer/make_dmg.sh` packages the DMG and checks the app inside it again. CI runs both on every pull request.
 
+### Windows installer and in-app updates
+
+`installer/alpacka.iss` builds the Inno Setup installer. **Update and restart** downloads the release's setup, checks it against `SHA256SUMS-windows.txt` and runs it with the command line `updater.installer_command` builds:
+
+```
+ALPACKA-<v>-windows-x64-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /LOG=<file> /waitpid=<pid> /relaunch=1
+```
+
+- `/waitpid=` makes the setup wait (up to 30 s) for that ALPACKA to quit before it replaces any file.
+- `/relaunch=1` makes a silent install open ALPACKA again. A silent install without it doesn't.
+
+Only the installed build offers this. The running exe must be in the folder the installer recorded under `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\{928D3EA7-C282-4066-995E-A6B0CC034E98}}_is1`. That key really ends in `}}`, because Inno has no escape for `}`. Never "fix" the `AppId`; a test checks the key and the `.iss` agree.
+
+The CI job **Build Windows installer** builds two installers from one bundle and runs `installer/test_update.ps1`. It installs A, starts it, runs B with that command line, and checks that B waits, installs and opens ALPACKA again. The script installs ALPACKA for the current user, so only run it on a spare machine.
+
 ## Code conventions
 
 - Relative imports inside the `alpacka` package (`from . import db`, `from .ui.main_window import MainWindow`). Never `from alpacka import X`.

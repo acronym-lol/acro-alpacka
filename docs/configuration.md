@@ -182,6 +182,8 @@ run_configs:
 
 Values are coerced to str at launch time. Empty / missing keys are not set.
 
+A TouchDesigner launch uses the run config with no `name` or named `default`. Other kinds use the run config being launched, falling back to that same one. The **Review Before Running** dialog lists each run config's `env` values.
+
 ### `launch_dependencies`
 
 Top-level list of companion commands ALPACKA spawns alongside the main launch — sidecar services, dev servers, helper scripts. Kind-agnostic: any project, regardless of `kind`, can declare them. Each entry:

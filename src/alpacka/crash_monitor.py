@@ -3,14 +3,18 @@
 A project can opt into monitoring via `reopen_on_crash` (configured from
 the Autostart Settings dialog on each card). When the monitored process
 
-- **dies** (clean crash / killed externally) — detected by the library
-  view's 6-second sweep of `running_processes`; or
+- **ends** for any reason except Stop (clean exit, crash, killed
+  externally) — detected by the library view's 6-second sweep of
+  `running_processes`, or, for one-shot runs, by the watcher thread
+  marking the row completed; or
 - **hangs** (main window unresponsive for `freeze_timeout_seconds`, Windows
   only) — detected here via `process_tracker.is_process_frozen`; we
   force-kill it and treat it the same as a crash,
 
-the launcher schedules a relaunch after `relaunch_delay_seconds` using
-the same `launch.launch_toe` path a manual launch uses.
+the launcher schedules a relaunch after `relaunch_delay_seconds` through
+the same launch call a manual launch uses: `launch.launch_toe` for the
+TouchDesigner file that ended, `launch.launch` with the run config that
+ended for every other kind.
 
 State is kept in module-level dicts and resets when the app restarts —
 losing a retry counter across restarts is acceptable and avoids a DB
@@ -25,8 +29,12 @@ from datetime import datetime
 
 from PySide6.QtCore import QTimer
 
-from . import approval, launch, library, process_tracker
+from . import approval, kinds, launch, library, process_tracker
 from .process_tracker import ProcessRecord
+
+# What a relaunch starts again: ("toe", <.toe filename>) for TouchDesigner,
+# ("config", <run config name>) for every other kind.
+Target = tuple[str, str]
 
 
 # row_id → consecutive auto-relaunches since the last manual launch.
@@ -37,10 +45,16 @@ _retry_counts: dict[int, int] = {}
 # or the process dies.
 _hang_first_seen: dict[int, float] = {}
 
-# row_ids with a QTimer.singleShot armed — guards against scheduling
-# two relaunches if a freeze-kill and a clean-crash both fire in the
-# same tick.
-_pending_relaunch: set[int] = set()
+# (row_id, target) with a QTimer.singleShot armed — guards against
+# scheduling two relaunches if a freeze-kill and a clean-crash both fire
+# in the same tick. Keyed per target so two run configs (or two .toe
+# files) of one project that end together both come back.
+_pending_relaunch: set[tuple[int, Target]] = set()
+
+# (pid, completed_at) of finished one-shot main rows already handled.
+# Those rows stay in `running_processes` until the next startup so the UI
+# can show the exit code; this keeps each finish from counting twice.
+_handled_completed: set[tuple[int, str]] = set()
 
 # row_ids where the user just clicked Stop — the next dead-process
 # detection for that row consumes the flag and skips relaunch.
@@ -55,7 +69,8 @@ def reset(row_id: int) -> None:
     pids is dropped.
     """
     _retry_counts.pop(row_id, None)
-    _pending_relaunch.discard(row_id)
+    for key in [k for k in _pending_relaunch if k[0] == row_id]:
+        _pending_relaunch.discard(key)
     _suppress_next.discard(row_id)
     # Hang tracking is keyed by pid so old entries time themselves out
     # naturally, but clear them proactively for the project's current
@@ -85,13 +100,15 @@ def tick(
 
     `dead` is the list just returned from `process_tracker.sweep_dead()`
     — rows that were alive on the last tick and are now gone. `alive`
-    is the current set of registered-and-live processes.
+    is every row still in `running_processes` (`process_tracker.list_all()`),
+    including finished one-shot runs, which the sweep never returns.
 
     Both passes are best-effort: any exception is swallowed so a single
     bad record doesn't stop the launcher's UI from refreshing.
     """
-    # Pass 1 — handle crashed processes.
-    for record in dead:
+    # Pass 1 — handle main processes that ended: those the sweep found
+    # gone, plus one-shot runs whose watcher has just marked them done.
+    for record in [*dead, *_newly_completed_mains(alive)]:
         try:
             _hang_first_seen.pop(record.pid, None)
             if record.project_id in _suppress_next:
@@ -129,6 +146,37 @@ def tick(
             _check_for_hang(record, now)
         except Exception:  # noqa: BLE001
             pass
+
+
+def _newly_completed_mains(records: list[ProcessRecord]) -> list[ProcessRecord]:
+    """Finished one-shot main rows not seen on an earlier tick.
+
+    A one-shot run's watcher thread marks its row completed as soon as
+    the process exits, and `sweep_dead` skips completed rows, so without
+    this the crash monitor would never hear that the run ended. (If the
+    sweep happens to see the exit first, it removes the row and returns it
+    in `dead` instead; either way each exit is handled once.)
+    """
+    seen: set[tuple[int, str]] = set()
+    fresh: list[ProcessRecord] = []
+    for rec in records:
+        if not rec.completed_at or rec.kind == "dependency":
+            continue
+        key = (rec.pid, rec.completed_at)
+        seen.add(key)
+        if key not in _handled_completed:
+            _handled_completed.add(key)
+            fresh.append(rec)
+    # Forget rows that have left the table.
+    _handled_completed.intersection_update(seen)
+    return fresh
+
+
+def _relaunch_target(record: ProcessRecord) -> Target:
+    """What to start again when `record`'s process ends."""
+    if record.kind == kinds.default_kind():
+        return ("toe", record.toe_file or "")
+    return ("config", record.run_config_name or "default")
 
 
 def _check_for_hang(record: ProcessRecord, now: float) -> None:
@@ -195,7 +243,8 @@ def _terminate_dependents(project_id: int) -> None:
 
 def _schedule_relaunch(record: ProcessRecord) -> None:
     row_id = record.project_id
-    if row_id in _pending_relaunch:
+    key = (row_id, _relaunch_target(record))
+    if key in _pending_relaunch:
         return  # already armed
     entry = library.get(row_id)
     if entry is None or entry.project is None:
@@ -213,7 +262,7 @@ def _schedule_relaunch(record: ProcessRecord) -> None:
             return
 
     _retry_counts[row_id] = _retry_counts.get(row_id, 0) + 1
-    _pending_relaunch.add(row_id)
+    _pending_relaunch.add(key)
     delay_ms = max(0, int(proj.relaunch_delay_seconds) * 1000)
     # Capture the record by default-arg so the closure doesn't pick up
     # a later iteration's binding.
@@ -224,28 +273,30 @@ def _schedule_relaunch(record: ProcessRecord) -> None:
 
 
 def _do_relaunch(row_id: int, record: ProcessRecord) -> None:
-    _pending_relaunch.discard(row_id)
+    target = _relaunch_target(record)
+    _pending_relaunch.discard((row_id, target))
     try:
         entry = library.get(row_id)
     except Exception:  # noqa: BLE001
         return
     if entry is None or entry.project is None:
         return
-    # Race guard — user may have manually launched during the cooldown,
-    # or another relaunch already fired. Either way, don't double-spawn.
-    # Only the main process counts here: surviving `keep_alive` deps
-    # (or a slow-to-die dep we already asked to terminate) shouldn't
-    # block a fresh main launch.
+    # Race guard — user may have manually launched the same thing during
+    # the cooldown, or another relaunch already fired. Either way, don't
+    # double-spawn. Only a main process with the same target counts: a
+    # different run config (or .toe) still running, surviving `keep_alive`
+    # deps, or a slow-to-die dep we already asked to terminate shouldn't
+    # block bringing this one back.
     try:
         running = process_tracker.active(process_tracker.list_for_project(row_id))
     except Exception:  # noqa: BLE001
         return
-    if any(r.kind != "dependency" for r in running):
+    if any(r.kind != "dependency" and _relaunch_target(r) == target for r in running):
         return
     if not (entry.project.launch_on_startup and entry.project.reopen_on_crash):
         return
     try:
-        launch.launch_toe(entry, record.toe_file)
+        _relaunch(entry, target)
     except launch.NeedsApproval:
         # Its run settings changed while it was running (e.g. a git pull)
         # and haven't been reviewed: don't run them unattended.
@@ -258,6 +309,18 @@ def _do_relaunch(row_id: int, record: ProcessRecord) -> None:
         pass
     except Exception:  # noqa: BLE001
         pass
+
+
+def _relaunch(entry: library.LibraryEntry, target: Target) -> None:
+    """Start `target` again through the call a manual launch uses."""
+    what, name = target
+    if what == "toe":
+        if name:
+            launch.launch_toe(entry, name)
+        else:
+            launch.launch(entry)
+    else:
+        launch.launch(entry, run_config_name=name)
 
 
 def _record_age_seconds(record: ProcessRecord, now: float) -> float:

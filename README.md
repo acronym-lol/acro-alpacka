@@ -21,14 +21,17 @@ Pick the asset that matches your platform:
 | --- | --- | --- |
 | Windows | `ALPACKA-<version>-windows-x64-setup.exe` | Installer. Per-user install, Start Menu entry, uninstaller. **Most users want this.** |
 | Windows | `ALPACKA-<version>-windows-x64-portable.zip` | Portable folder — extract anywhere, run `ALPACKA.exe`. No install. |
-| macOS | `ALPACKA-<version>-macos.dmg` | Mount, drag `ALPACKA.app` into Applications. |
+| macOS | `ALPACKA-<version>-macos-arm64.dmg` | Apple silicon Macs (M1 or later). Mount, drag `ALPACKA.app` into Applications. |
 
 ### First-run warnings
 
 ALPACKA isn't code-signed yet, so the first launch shows an OS security prompt. Each release includes `SHA256SUMS-windows.txt` and `SHA256SUMS-macos.txt` so you can check a download matches what was published. The prompt is one-time:
 
 - **Windows — SmartScreen**: "Windows protected your PC" dialog. Click **More info**, then **Run anyway**.
-- **macOS — Gatekeeper**: double-click won't work the first time. **Right-click** (or `Ctrl`-click) `ALPACKA.app` → **Open** → confirm **Open** in the prompt. Subsequent launches work normally.
+- **macOS 15 or later — Gatekeeper**: macOS says it could not verify ALPACKA. Click **Done**, then go to **System Settings → Privacy & Security** and click **Open Anyway** next to the ALPACKA message.
+- **Older macOS — Gatekeeper**: **Right-click** (or `Ctrl`-click) `ALPACKA.app` → **Open** → confirm **Open** in the prompt.
+
+Subsequent launches work normally.
 
 ## Development setup
 

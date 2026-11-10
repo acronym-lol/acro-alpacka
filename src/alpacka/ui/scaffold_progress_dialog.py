@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .. import template_scaffold
+from .. import process_tracker, template_scaffold
 from .frameless import FramelessDialog
 
 
@@ -40,7 +40,7 @@ class _ScaffoldWorker(QThread):
     """
 
     output = Signal(str)
-    completed = Signal(int)
+    completed = Signal(object)  # not `int`: Windows exit codes can exceed Qt's signed int
 
     def __init__(
         self,
@@ -202,7 +202,7 @@ class ScaffoldProgressDialog(FramelessDialog):
         else:
             # Failure — auto-expand the output panel so the user can see
             # what broke without needing to click Show output.
-            self._heading_label.setText(f"Failed (exit {exit_code}).")
+            self._heading_label.setText(f"Failed (exit {process_tracker.format_exit_code(exit_code)}).")
             self._spinner_label.setText("⚠")
             if not self._output_view.isVisible():
                 self._toggle_output()

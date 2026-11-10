@@ -65,7 +65,10 @@ class OutputBuffer(QObject):
     # ~50ms cadence). Listeners append the entire batch at once.
     lines_appended = Signal(list)
     # Status transitions: ("idle"|"running"|"exited", exit_code_or_-1).
-    status_changed = Signal(str, int)
+    # `object`, not `int`: Windows exit codes are unsigned 32-bit and the
+    # ones Windows sets (0xC0000005, 0xC000013A, ...) don't fit Qt's
+    # signed int, which wraps them negative with an overflow warning.
+    status_changed = Signal(str, object)
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -144,7 +147,7 @@ class _CaptureWorker(QThread):
     """
 
     batch = Signal(list)
-    finished_with_code = Signal(int)
+    finished_with_code = Signal(object)  # not `int`: see OutputBuffer.status_changed
 
     def __init__(
         self,
@@ -341,6 +344,13 @@ def notify_exit(row_id: int, code: int) -> None:
     buf = _BUFFERS.get(row_id)
     if buf is not None:
         buf.set_exited(int(code))
+
+
+def running_inline_rows() -> list[int]:
+    """Row ids with an inline child still running: they stop when ALPACKA quits."""
+    with _LOCK:
+        items = list(_PROCS.items())
+    return sorted({row_id for (row_id, _pid), proc in items if proc.poll() is None})
 
 
 def shutdown_inline_children() -> None:

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from alpacka import fsutil, launch_runner, project, td_download, td_install, updater
+from alpacka import downloads, fsutil, launch_runner, project, td_download, td_install, updater
 from alpacka.template_apply import (
     ApplyContext,
     FileEntry,
@@ -80,7 +80,7 @@ def test_unsigned_cached_installer_is_deleted_not_run(tmp_path, monkeypatch):
     def no_network(*a, **k):
         raise OSError("offline")
 
-    monkeypatch.setattr(td_download.urllib.request, "urlopen", no_network)
+    monkeypatch.setattr(downloads.urllib.request, "urlopen", no_network)
     with pytest.raises(td_download.DownloadError):
         td_download.download("2025.32460")
     assert not cached.exists()
@@ -248,6 +248,60 @@ def test_env_names_for_macos_script():
     assert launch_runner._ENV_NAME.fullmatch("API_KEY")
     assert not launch_runner._ENV_NAME.fullmatch("A;rm -rf ~")
     assert not launch_runner._ENV_NAME.fullmatch("1ABC")
+
+
+# --- Console windows and Auto Relaunch ------------------------------------------
+# A console window that waits for a key after an error keeps its wrapper
+# process (the PID ALPACKA tracks) alive, which hides the crash from the
+# crash monitor. With pause_on_error=False the window must not wait.
+
+
+@pytest.fixture
+def captured_popen(monkeypatch):
+    calls = []
+
+    def fake_popen(args, **kwargs):
+        calls.append(args)
+        return types.SimpleNamespace(pid=4242)
+
+    monkeypatch.setattr(launch_runner.subprocess, "Popen", fake_popen)
+    return calls
+
+
+@pytest.mark.parametrize("pause", [True, False])
+def test_windows_console_pauses_only_when_asked(captured_popen, tmp_path, pause):
+    launch_runner._run_console_windows(
+        ["app.exe"], cwd=tmp_path, env={}, shell=False, pause_on_error=pause
+    )
+    assert ("pause" in captured_popen[0]) is pause
+
+
+@pytest.mark.parametrize("pause", [True, False])
+def test_linux_console_pauses_only_when_asked(captured_popen, monkeypatch, tmp_path, pause):
+    monkeypatch.setattr(launch_runner, "_find_linux_terminal", lambda: "xterm")
+    launch_runner._run_console_linux(
+        ["app"], cwd=tmp_path, env={}, shell=False, pause_on_error=pause
+    )
+    bash_command = captured_popen[0][-1]
+    assert ("read -n 1" in bash_command) is pause
+    assert bash_command.startswith("cd ")
+
+
+@pytest.mark.parametrize("pause", [True, False])
+def test_macos_console_pauses_only_when_asked(captured_popen, monkeypatch, tmp_path, pause):
+    scripts = []
+
+    def fake_write(text, *, suffix):
+        scripts.append(text)
+        return tmp_path / f"script{suffix}"
+
+    monkeypatch.setattr(launch_runner, "_write_temp_script", fake_write)
+    monkeypatch.setattr(launch_runner, "_wait_for_pid_file", lambda path, timeout: 4242)
+    monkeypatch.setattr(launch_runner, "_AdoptedProcess", lambda pid: types.SimpleNamespace(pid=pid))
+    launch_runner._run_console_macos(
+        ["app"], cwd=tmp_path, env={}, shell=False, pause_on_error=pause
+    )
+    assert ("read -n 1" in scripts[0]) is pause
 
 
 # --- Updater -----------------------------------------------------------------

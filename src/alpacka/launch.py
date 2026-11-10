@@ -236,7 +236,11 @@ def _spawn(
 
     handler = kinds.get(proj.kind)
     if run_config is None:
-        run_config = handler.default_run_config(proj)
+        # TD launches (and anything else that names no run config) use the
+        # alpacka.yml run config with no name or named "default" when there
+        # is one, so its `env` and `variables` apply; otherwise the kind's
+        # default.
+        run_config = _resolve_run_config(proj, None)
 
     merged_vars = dict(proj.variables)
     merged_vars.update(run_config.variables)
@@ -252,10 +256,7 @@ def _spawn(
         extras["artifact"] = toe_path
 
     spec = handler.build_launch(proj, run_config, merged_vars, **extras)
-
-    env = dict(os.environ)
-    for k, v in spec.env.items():
-        env[str(k)] = str(v)
+    env = _launch_env(spec, run_config)
 
     # Resolve the project's effective output mode, then dispatch to the
     # matching runner. TD projects always go through `silent` — the TD
@@ -266,7 +267,13 @@ def _spawn(
     else:
         output_mode = proj.effective_output_mode(handler) or "none"
 
-    proc, output_mode = _dispatch_runner(spec, env, output_mode)
+    # A console window normally waits for a key after an error so the
+    # output stays readable. With Auto Relaunch on, nobody may be there to
+    # press it, and the waiting window would hide the crash.
+    relaunches = bool(proj.launch_on_startup and proj.reopen_on_crash)
+    proc, output_mode = _dispatch_runner(
+        spec, env, output_mode, pause_on_error=not relaunches
+    )
 
     # Register the spawned PID so the library view can surface running
     # state and later focus / terminate the process. Defensive — DB failure
@@ -327,6 +334,22 @@ def _spawn(
         pass
 
     return proc
+
+
+def _launch_env(spec: kinds.LaunchSpec, run_config: kinds.RunConfig) -> dict[str, str]:
+    """The environment the spawned process gets.
+
+    Layers, lowest first: ALPACKA's own environment; what the kind handler
+    built (project + run-config `variables`, and kind settings such as
+    TD's `launch_settings`); then the run config's `env` map, the most
+    explicit override, for every kind (docs/configuration.md).
+    """
+    env = dict(os.environ)
+    for k, v in spec.env.items():
+        env[str(k)] = str(v)
+    for k, v in run_config.env.items():
+        env[str(k)] = str(v)
+    return env
 
 
 def _sync_td_prefs(install: TDInstall) -> None:
@@ -498,6 +521,8 @@ def _dispatch_runner(
     spec: kinds.LaunchSpec,
     env: dict[str, str],
     output_mode: str,
+    *,
+    pause_on_error: bool = True,
 ) -> tuple[subprocess.Popen, str]:
     """Pick a runner based on `output_mode`; return (proc, effective_mode).
 
@@ -505,11 +530,16 @@ def _dispatch_runner(
     terminal (currently only fires on Linux when the fallback chain
     yields nothing). The effective mode is returned so the caller
     persists what actually happened, not what was requested.
+    `pause_on_error` only affects console mode.
     """
     if output_mode == "console":
         try:
             proc = launch_runner.run_console(
-                spec.argv, cwd=spec.cwd, env=env, shell=spec.shell
+                spec.argv,
+                cwd=spec.cwd,
+                env=env,
+                shell=spec.shell,
+                pause_on_error=pause_on_error,
             )
             return proc, "console"
         except launch_runner.ConsoleUnavailableError:

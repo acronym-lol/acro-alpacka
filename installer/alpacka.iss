@@ -17,6 +17,17 @@
 ;   * AppId is a pinned GUID — never regenerate. It's what Inno uses to
 ;     detect an existing install and upgrade it in place. Changing it
 ;     would make every future release look like a brand-new product.
+;     It ends in `}}`: Inno reads `{{` as an escaped `{` but has no escape
+;     for `}`, so the stored ID is `{928D…98}}` and the registry key is
+;     `…\Uninstall\{928D…98}}_is1`. Every install so far has that ID, and
+;     `updater.INSTALLER_APP_KEY` reads that key. Don't "fix" it.
+;   * Silent updates from inside ALPACKA (`updater.installer_command`):
+;       ALPACKA-<v>-windows-x64-setup.exe /VERYSILENT /SUPPRESSMSGBOXES
+;         /NORESTART /CLOSEAPPLICATIONS /LOG=<file> /waitpid=<pid> /relaunch=1
+;     `/waitpid=` waits (up to 30 s) for the ALPACKA that started Setup to
+;     exit; Restart Manager closes it if it's still open after that.
+;     `/relaunch=1` opens ALPACKA again once the silent install finishes.
+;     `installer/test_update.ps1` (run in CI) checks both.
 ;   * Installer + uninstaller icons use the same `alpacka.ico` we ship with
 ;     the app, so the Add/Remove Programs row has the right branding.
 ;   * `{app}` folder is removed on uninstall but `%APPDATA%\ALPACKA\` (user
@@ -84,3 +95,43 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+; Silent update started by ALPACKA: open it again (see the header).
+Filename: "{app}\{#MyAppExeName}"; Flags: nowait; Check: RelaunchRequested
+
+[Code]
+const
+  SYNCHRONIZE = $00100000;
+  UPDATE_WAIT_MS = 30000;
+
+function OpenProcess(dwDesiredAccess: DWORD; bInheritHandle: BOOL; dwProcessId: DWORD): THandle;
+  external 'OpenProcess@kernel32.dll stdcall';
+function WaitForSingleObject(hHandle: THandle; dwMilliseconds: DWORD): DWORD;
+  external 'WaitForSingleObject@kernel32.dll stdcall';
+function CloseHandle(hObject: THandle): BOOL;
+  external 'CloseHandle@kernel32.dll stdcall';
+
+// `/waitpid=<pid>`: let the ALPACKA that started this update finish
+// quitting before any file is replaced.
+function InitializeSetup(): Boolean;
+var
+  Pid: Integer;
+  Process: THandle;
+begin
+  Pid := StrToIntDef(ExpandConstant('{param:waitpid|0}'), 0);
+  if Pid > 0 then
+  begin
+    Process := OpenProcess(SYNCHRONIZE, False, Pid);
+    if Process <> 0 then
+    begin
+      WaitForSingleObject(Process, UPDATE_WAIT_MS);
+      CloseHandle(Process);
+    end;
+  end;
+  Result := True;
+end;
+
+// `/relaunch=1` on a silent install: open ALPACKA again afterwards.
+function RelaunchRequested(): Boolean;
+begin
+  Result := WizardSilent and (ExpandConstant('{param:relaunch|0}') = '1');
+end;
