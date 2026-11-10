@@ -53,7 +53,7 @@ If the project is in `console` mode, **each** dep gets its own terminal window �
 | When… | Persistent dep (default) | Persistent dep with Keep alive | Run-once dep |
 |---|---|---|---|
 | **Stop** clicked on the card | Killed | Killed | Killed (or already exited) |
-| **Main exits cleanly / crashes** | Killed by crash monitor | Stays running | Already exited or running its own course |
+| **Main exits cleanly / crashes** (including a run-once main run finishing) | Killed by crash monitor | Stays running | Already exited or running its own course |
 | **Crash relaunch fires** (`launch_on_startup` + `reopen_on_crash`) | Killed before relaunch, respawned with the new main | Stays running through the relaunch | Re-spawned fresh with the new main |
 | **Dep crashes by itself** | Row removed on next sweep; status pill flips to `✗ stopped` until the row clears | Same | One-shot's row stays with exit code; persistent's row goes away |
 | **ALPACKA itself quits** (inline-mode deps) | SIGTERM via process group, then SIGKILL after 3s grace | SIGTERM via process group, then SIGKILL after 3s grace | Same |
